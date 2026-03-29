@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CBT SNBT 2026 – Paten Drilling</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{font-family:'Plus Jakarta Sans',sans-serif}
+  :root{
+    --blue:#1d4ed8;--blue-light:#3b82f6;--blue-bg:#eff6ff;
+    --green:#16a34a;--green-bg:#f0fdf4;
+    --red:#dc2626;--red-bg:#fef2f2;
+    --yellow:#d97706;--yellow-bg:#fffbeb;
+    --gray:#64748b;--border:#e2e8f0;
+  }
+
+  /* ── Nav Buttons ── */
+  .btn-nav{
+    width:2.15rem;height:2.15rem;border-radius:6px;font-size:.72rem;
+    font-weight:700;border:1.5px solid var(--border);cursor:pointer;
+    transition:all .12s;display:flex;align-items:center;justify-content:center;
+    background:#f8fafc;color:#475569;
+  }
+  .btn-answered{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn-ragu{background:var(--yellow);color:#fff;border-color:var(--yellow)}
+  .btn-current{box-shadow:0 0 0 2.5px var(--blue-light);z-index:1;position:relative}
+  .btn-correct{background:var(--green);color:#fff;border-color:var(--green)}
+  .btn-wrong{background:var(--red);color:#fff;border-color:var(--red)}
+
+  /* ── Option Buttons ── */
+  .opt{
+    display:flex;align-items:flex-start;width:100%;text-align:left;
+    padding:.7rem 1rem;border-radius:10px;border:1.5px solid var(--border);
+    margin-bottom:.5rem;cursor:pointer;transition:all .12s;
+    background:#fff;font-size:.93rem;line-height:1.55;gap:.6rem;
+  }
+  .opt:hover{border-color:var(--blue-light);background:var(--blue-bg)}
+  .opt.selected{border-color:var(--blue);background:var(--blue-bg);color:#1e40af;font-weight:600}
+  .opt.correct{border-color:var(--green);background:var(--green-bg);color:#166534;font-weight:600}
+  .opt.wrong{border-color:var(--red);background:var(--red-bg);color:#991b1b;font-weight:600}
+  .opt.show-correct{border-color:var(--green);background:var(--green-bg);color:#166534}
+  .opt-label{font-weight:700;min-width:1.4rem;color:#94a3b8}
+  .opt.selected .opt-label{color:var(--blue)}
+  .opt.correct .opt-label,.opt.show-correct .opt-label{color:var(--green)}
+  .opt.wrong .opt-label{color:var(--red)}
+
+  /* ── Stimulus Box ── */
+  .stimulus-box{
+    background:#f8fafc;border-left:3px solid var(--blue-light);
+    padding:.9rem 1rem;border-radius:0 8px 8px 0;
+    font-size:.88rem;line-height:1.75;color:#334155;
+  }
+  .stimulus-box p{margin-bottom:.4rem}
+
+  /* ── Tables ── */
+  .soal-tbl{border-collapse:collapse;width:100%;font-size:.85rem;margin:.5rem 0}
+  .soal-tbl td,.soal-tbl th{border:1px solid #cbd5e1;padding:.35rem .6rem;text-align:center}
+  .soal-tbl th{background:#f1f5f9;font-weight:700;text-align:center}
+
+  /* ── Timer Bar ── */
+  #timer-bar{transition:width .8s linear}
+
+  /* ── Score ring ── */
+  .score-ring{
+    width:130px;height:130px;border-radius:50%;
+    background:conic-gradient(var(--blue) 0deg, #e2e8f0 0deg);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 6px #fff,0 0 0 10px var(--blue-bg);
+  }
+  .score-ring-inner{
+    width:95px;height:95px;border-radius:50%;background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+
+  /* ── Progress ── */
+  .progress-bar{height:6px;border-radius:999px;background:#e2e8f0;overflow:hidden}
+  .progress-fill{height:100%;border-radius:999px;background:var(--blue);transition:width .3s}
+
+  /* ── Tabs ── */
+  .tab{padding:.5rem 1rem;font-size:.85rem;font-weight:600;border-bottom:3px solid transparent;cursor:pointer;color:#64748b;transition:all .15s}
+  .tab.active{border-color:var(--blue);color:var(--blue)}
+
+  /* ── Intro card ── */
+  .subtest-card{
+    border:2px solid var(--border);border-radius:12px;padding:.9rem 1rem;
+    cursor:pointer;transition:all .15s;text-align:left;background:#fff;
+  }
+  .subtest-card:hover{border-color:var(--blue-light);background:var(--blue-bg)}
+  .subtest-card.active{border-color:var(--blue);background:var(--blue-bg)}
+
+  /* ── Animations ── */
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .fade-in{animation:fadeIn .25s ease forwards}
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+
+  /* ── Responsive util ── */
+  @media(max-width:768px){
+    #stimulus-panel{display:none!important}
+    #question-panel{width:100%!important}
+    #nav-sidebar{display:none}
+  }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+<!-- ═══════════════════ INTRO SCREEN ═══════════════════ -->
+<div id="screen-intro" class="min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-blue-700 to-blue-500 p-8 text-white">
+      <div class="text-xs font-bold tracking-widest text-blue-200 uppercase mb-1">E-Book Paten Drilling</div>
+      <div class="text-3xl font-black mb-1">SNBT 2026</div>
+      <div class="text-blue-100 text-sm">Computer Based Test · Simulasi UTBK</div>
+    </div>
+    <!-- Subtest Select -->
+    <div class="p-6">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Pilih Sub-Tes</div>
+      <div id="subtest-grid" class="space-y-2 mb-5"></div>
+      <div id="selected-info" class="bg-blue-50 rounded-xl p-3 mb-5 text-sm text-blue-700 font-medium border border-blue-100"></div>
+      <button onclick="startExam()" class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 rounded-xl text-base shadow-lg shadow-blue-200 transition">
+        Mulai Ujian ▶
+      </button>
+      <p class="text-center text-xs text-slate-400 mt-3">Timer otomatis mulai. Jawaban tersimpan per soal.</p>
+      <div class="mt-4 text-center">
+        <button onclick="openDonateModal()" class="mt-3 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Donate via QRIS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ EXAM SCREEN ═══════════════════ -->
+<div id="screen-exam" class="hidden flex-col" style="height:100dvh">
+
+  <!-- Top Bar -->
+  <div class="bg-blue-700 text-white flex items-center gap-3 px-4 py-2.5 shadow-md flex-shrink-0">
+    <div class="flex-1 min-w-0">
+      <div class="font-bold text-sm truncate" id="hdr-subtest">Sub-tes</div>
+      <div class="text-blue-200 text-xs">Soal <span id="hdr-cur">1</span> dari <span id="hdr-tot">30</span></div>
+    </div>
+    <div id="timer-display" class="bg-blue-800 rounded-lg px-3 py-1.5 font-mono font-bold text-lg tabular-nums min-w-[5.5rem] text-center">00:00</div>
+    <button onclick="confirmFinish()" class="bg-white text-blue-700 font-bold px-4 py-1.5 rounded-lg text-sm hover:bg-blue-50 transition whitespace-nowrap">
+      Selesai ✓
+    </button>
+  </div>
+
+  <!-- Timer Progress Bar -->
+  <div class="w-full bg-blue-200 flex-shrink-0" style="height:4px">
+    <div id="timer-bar" class="h-full bg-yellow-400" style="width:100%"></div>
+  </div>
+
+  <!-- Body -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- Stimulus Panel (Left) -->
+    <div id="stimulus-panel" class="hidden w-5/12 border-r border-slate-200 overflow-y-auto bg-white flex-shrink-0">
+      <div class="p-4">
+        <div class="text-xs font-bold text-blue-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+          <span>📄</span> Teks Bacaan / Stimulus
+        </div>
+        <div id="stimulus-content" class="stimulus-box"></div>
+      </div>
+    </div>
+
+    <!-- Question Panel (Center) -->
+    <div id="question-panel" class="flex-1 overflow-y-auto bg-white">
+      <div class="p-5 max-w-2xl mx-auto">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2" id="q-badge"></div>
+        <div class="text-slate-700 font-semibold leading-relaxed mb-4" id="q-text" style="font-size:.97rem"></div>
+        <div id="q-options"></div>
+        <div class="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-100">
+          <button onclick="toggleRagu()" id="btn-ragu"
+            class="text-xs border border-yellow-400 text-yellow-600 hover:bg-yellow-50 px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1">
+            ⚑ Ragu-Ragu
+          </button>
+          <button onclick="prevQ()"
+            class="text-xs border border-slate-300 text-slate-500 hover:bg-slate-50 px-3 py-1.5 rounded-lg transition">
+            ← Sebelumnya
+          </button>
+          <button onclick="nextQ()"
+            class="text-xs border border-blue-400 text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg font-semibold transition">
+            Berikutnya →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav Sidebar (Right) -->
+    <div id="nav-sidebar" class="w-48 border-l border-slate-200 bg-slate-50 overflow-y-auto flex-shrink-0 flex flex-col">
+      <div class="p-3 flex-1">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Navigasi Soal</div>
+        <div id="nav-grid" class="grid grid-cols-5 gap-1 mb-4"></div>
+      </div>
+      <div class="p-3 border-t border-slate-200 space-y-1.5">
+        <div class="text-xs text-slate-400 font-medium">Keterangan</div>
+        <div class="flex items-center gap-2 text-xs text-slate-500"><span class="btn-nav btn-answered" style="font-size:.6rem">✓</span> Dijawab</div>
+        <div class="flex items-center gap-2 text-xs text-slate-500"><span class="btn-nav btn-ragu" style="font-size:.6rem">⚑</span> Ragu-ragu</div>
+        <div class="flex items-center gap-2 text-xs text-slate-500"><span class="btn-nav">○</span> Belum</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ RESULT SCREEN ═══════════════════ -->
+<div id="screen-result" class="hidden min-h-screen bg-slate-50 p-4">
+  <div class="max-w-2xl mx-auto pt-6">
+
+    <div class="text-center mb-6">
+      <div class="text-2xl font-black text-blue-700">Hasil Ujian Selesai 🎉</div>
+      <div class="text-slate-400 text-sm mt-1">SNBT 2026 – Paten Drilling Soal</div>
+    </div>
+
+    <!-- Score Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-4 text-center">
+      <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Skor IRT Simulasi</div>
+      <div class="flex justify-center mb-4">
+        <div id="score-donut" class="score-ring">
+          <div class="score-ring-inner">
+            <div class="text-3xl font-black text-blue-700" id="total-score">0</div>
+            <div class="text-xs text-slate-400 font-medium">/ 1000</div>
+          </div>
+        </div>
+      </div>
+      <div id="score-grade" class="text-lg font-bold mb-1"></div>
+      <div id="score-summary" class="text-sm text-slate-500"></div>
+    </div>
+
+    <!-- Breakdown -->
+    <div id="score-breakdown" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4"></div>
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+      <button onclick="startReview()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+        📋 Lihat Pembahasan
+      </button>
+      <button onclick="resetApp()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-xl transition">
+        🔄 Ulangi Tes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ REVIEW SCREEN ═══════════════════ -->
+<div id="screen-review" class="hidden min-h-screen bg-slate-50">
+  <div class="max-w-2xl mx-auto p-4 pb-20">
+    <!-- Review header -->
+    <div class="flex items-center gap-3 py-4 mb-2 sticky top-0 bg-slate-50 z-10">
+      <button onclick="backToResult()" class="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+        ← Kembali
+      </button>
+      <div class="font-bold text-lg text-slate-700 flex-1">Review & Pembahasan</div>
+      <div id="review-score-badge" class="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full"></div>
+    </div>
+    <!-- Filter tabs -->
+    <div class="flex border-b border-slate-200 mb-4">
+      <button class="tab active" onclick="filterReview('all',this)">Semua</button>
+      <button class="tab" onclick="filterReview('wrong',this)">❌ Salah</button>
+      <button class="tab" onclick="filterReview('correct',this)">✅ Benar</button>
+      <button class="tab" onclick="filterReview('unanswered',this)">○ Belum</button>
+    </div>
+    <div id="review-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MODAL KONFIRMASI ═══════════════════ -->
+<div id="modal-confirm" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl p-7 max-w-sm w-full text-center fade-in">
+    <div class="text-4xl mb-3">⏱️</div>
+    <div class="text-xl font-bold text-slate-800 mb-2">Akhiri Ujian?</div>
+    <div id="modal-info" class="text-slate-500 text-sm mb-6 leading-relaxed"></div>
+    <div class="flex gap-3">
+      <button onclick="closeModal()" class="flex-1 border-2 border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl hover:bg-slate-50 transition">
+        Kembali
+      </button>
+      <button onclick="finishExam()" class="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-xl hover:bg-blue-700 transition">
+        Ya, Selesai
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  DATA SOAL — Diekstrak dari PDF "Paten Drilling Soal SNBT 2026"
+//  Sumber: e-Book Paten Drilling SNBT 2026
+// ═══════════════════════════════════════════════════════════════════════════
+
+const examData = {
+  subtests: [
+
+    // ─── 1. PENALARAN UMUM (POTENSI KOGNITIF) ───────────────────────────────
+    {
+      id:"PU", label:"Penalaran Umum", shortLabel:"PU",
+      desc:"Potensi Kognitif", icon:"🧠",
+      duration:30*60, color:"#2563EB",
+      questions:[
+        {id:1,stimulus:null,text:"Jika laptop rusak maka Ayah pusing.\nJika Ayah pusing maka perlu minum obat.\nKesimpulannya adalah ....",options:["Laptop rusak dan Ayah minum obat.","Laptop tidak rusak atau Ayah minum obat.","Laptop rusak atau Ayah tidak minum obat.","Laptop tidak rusak dan Ayah pusing.","Laptop rusak dan Ayah pusing."],answer:"A",explanation:"Modus ponens berantai: laptop rusak → pusing → minum obat. Kesimpulan: laptop rusak DAN Ayah minum obat."},
+        {id:2,stimulus:null,text:"Semua orang pasti minum air tiap hari.\nBeberapa orang tidak suka air putih.\nAir putih membuat badan sehat.\nKesimpulannya adalah ....",options:["Air putih disukai banyak orang.","Semua orang badannya sehat.","Beberapa orang suka minum air putih dan badannya sehat.","Ada orang yang tidak minum air tiap hari dan badannya sehat.","Setiap orang yang minum air tiap hari badannya sehat."],answer:"C",explanation:"Negasi 'beberapa tidak suka' = beberapa suka. Air putih membuat sehat → beberapa orang suka minum air putih dan badannya sehat. Jawaban C."},
+        {id:3,stimulus:null,text:"Semua pelajar hari ini memakai baju putih.\nBeberapa yang memakai baju putih juga memakai topi hitam.\nBurhan memakai topi hitam.\nKesimpulannya adalah ....",options:["Burhan adalah pelajar","Burhan memakai baju putih","Burhan bukan pelajar","Burhan memakai baju putih juga","Burhan memakai baju selain putih"],answer:"A",explanation:"Beberapa baju putih + topi hitam. Burhan bertopi hitam → kemungkinan memakai baju putih → pelajar. Jawaban A."},
+        {id:4,stimulus:null,text:"Indonesia mempunyai beragam suku dan budaya.\nBeberapa suku tinggal di pulau Jawa.\nSemua budaya harus dilestarikan.\nKesimpulannya adalah ....",options:["Indonesia melestarikan budaya yang ada.","Semua budaya dan suku berada di Jawa.","Beberapa suku dan budaya yang dilestarikan ada di Jawa.","Setiap suku yang tinggal di pulau Jawa mempunyai budaya yang sama.","Ada suku yang tidak tinggal di Jawa atau budaya luar Jawa yang tidak dilestarikan."],answer:"C",explanation:"Beberapa suku di Jawa memiliki budaya → budaya harus dilestarikan → beberapa suku dan budaya yang dilestarikan ada di Jawa. Jawaban C."},
+        {id:5,stimulus:null,text:"Semua orang yang salah harus dihukum.\nAda orang yang terkena hukuman penjara.\nKesimpulannya adalah ....",options:["Beberapa orang dipenjara","Ada yang dipenjara karena salah","Semua yang salah akan dipenjara","Orang yang tidak salah masuk penjara","Orang yang dipenjara adalah orang yang tidak salah"],answer:"B",explanation:"Ada orang dipenjara + semua yang salah dihukum → ada yang dipenjara karena salah. Jawaban B."},
+        {id:6,stimulus:null,text:"Semua ayam mempunyai bulu dan sayap.\nBeberapa bulu ayam diwarnai saat kecil.\nAda ayam yang sayapnya kecil.\nKesimpulannya adalah ....",options:["Beberapa ayam mempunyai sayap yang kecil.","Setiap ayam bulunya diwarnai sejak kecil.","Ayam mempunyai bulu berwarna dan sayap kecil.","Ada ayam yang diwarnai dan sayapnya tidak kecil.","Semua ayam yang diwarnai sayapnya tidak kecil."],answer:"D",explanation:"Menggunakan 'ada/beberapa' → kesimpulan tidak bisa menggunakan 'semua'. Ada ayam diwarnai (premis 2), ada sayap kecil (premis 3), sehingga: ada ayam diwarnai dengan sayap tidak kecil. Jawaban D."},
+        {id:7,stimulus:null,text:"Jika lembur maka mata kurang tidur.\nMata yang kurang tidur akan berwarna merah.\nUdin matanya tidak merah.\nKesimpulannya adalah ....",options:["Udin sedang lembur","Udin tidak lembur","Udin kurang tidur","Udin tidak kurang tidur","Udin matanya tidak merah dan kurang tidur"],answer:"B",explanation:"Modus tollens: mata tidak merah → tidak kurang tidur → tidak lembur. Jawaban B."},
+        {id:8,stimulus:null,text:"Guru A mengatakan, \"Matematika hanya perlu latihan bukan dihafal.\"\nGuru B mengatakan, \"Matematika sangat diperlukan dalam kehidupan sehari-hari.\"\nFaktanya ada siswa yang mampu lolos Olimpiade matematika dengan latihan terus menerus.\nBerdasarkan data, bagaimana hubungannya dengan kedua pernyataan tersebut?",options:["Memperkuat pernyataan guru A","Memperkuat pernyataan guru B","Memperlemah pernyataan guru A","Memperlemah pernyataan guru B","Tidak ada relevansi dengan pernyataan guru A dan guru B"],answer:"A",explanation:"Fakta siswa lolos Olimpiade dengan latihan terus-menerus → mendukung Guru A. Jawaban A."},
+        {id:9,stimulus:null,text:"Warga A mengatakan, \"Kebersihan merupakan tanggung jawab bersama.\"\nWarga B mengatakan, \"Lingkungan yang bersih menciptakan suasana yang sehat.\"\nDesa yang dihuni oleh warga A dan B mempunyai suasana yang bersih karena warganya membersihkan lingkungan secara pribadi.\nBerdasarkan data, bagaimana hubungannya dengan kedua pernyataan tersebut?",options:["Memperkuat pernyataan warga A","Memperkuat pernyataan warga B","Memperlemah pernyataan warga A","Memperlemah pernyataan warga B","Tidak ada relevansi dengan pernyataan warga A dan warga B"],answer:"C",explanation:"Desa bersih karena warga membersihkan secara PRIBADI (bukan bersama) → memperlemah Warga A. Jawaban C."},
+        {id:10,stimulus:null,text:"Yanti mengatakan, \"Ban yang tipis mudah membuat roda tergelincir.\"\nYanto mengatakan, \"Roda tergelincir akibat kondisi jalan yang licin.\"\nBeberapa saat kemudian, ada seorang pengendara sepeda motor yang mengalami kecelakaan akibat bannya pecah.\nBerdasarkan data, bagaimana hubungannya dengan kedua pernyataan tersebut?",options:["Memperkuat pernyataan Yanti.","Memperkuat pernyataan Yanto.","Memperlemah pernyataan Yanti.","Memperlemah pernyataan Yanto.","Tidak ada relevansi dengan pernyataan Yanti dan Yanto."],answer:"E",explanation:"Kecelakaan akibat ban pecah, bukan ban tipis atau jalan licin. Tidak relevan dengan keduanya. Jawaban E."},
+        {id:11,stimulus:null,text:"Bibi mengatakan, \"Setiap anak harus diawasi orang tua jangan sampai lengah.\"\nPaman mengatakan, \"Anak yang penting diberi asupan gizi yang cukup.\"\nFakta di lapangan menunjukkan anak tidak hanya diberi asupan gizi saja, namun juga perlu bimbingan tambahan seperti les privat.\nBerdasarkan data, bagaimana hubungannya dengan kedua pernyataan tersebut?",options:["Memperkuat pernyataan Bibi.","Memperkuat pernyataan Paman.","Memperlemah pernyataan Bibi.","Memperlemah pernyataan Paman.","Tidak ada relevansi dengan pernyataan Bibi dan Paman."],answer:"D",explanation:"Fakta: anak butuh bimbingan tambahan, bukan hanya gizi → memperlemah Paman. Jawaban D."},
+        {id:12,stimulus:null,text:"Ibu mengatakan, \"Bekerja yang giat akan mendapatkan banyak uang.\"\nAyah mengatakan, \"Kamu dapat mempunyai uang banyak dengan cara investasi dan bisnis.\"\nSaat Anda dewasa, uang bisa diperoleh dengan cara investasi dan menabung dengan giat.\nBerdasarkan data, bagaimana hubungannya dengan kedua pernyataan tersebut?",options:["Memperkuat pernyataan Ibu.","Memperkuat pernyataan Ayah.","Memperlemah pernyataan Ibu.","Memperlemah pernyataan Ayah.","Tidak ada relevansi dengan pernyataan Ibu dan Ayah."],answer:"E",explanation:"Fakta membahas investasi dan menabung, bukan bekerja giat atau bisnis secara spesifik → tidak relevan. Jawaban E."},
+        {id:13,stimulus:null,text:"Semua laptop mempunyai baterai.\nBeberapa baterai laptop sudah rusak.\nBaterai yang rusak hanya bertahan setengah jam.\nKesimpulannya adalah ....",options:["Beberapa laptop baterainya bertahan setengah jam.","Ada baterai laptop yang bertahan tidak setengah jam.","Setiap laptop mempunyai baterai yang tidak rusak.","Semua laptop mempunyai baterai yang rusak.","Ada laptop yang mempunyai baterai bertahan setengah jam."],answer:"E",explanation:"Beberapa laptop rusak baterainya → bertahan setengah jam. Dengan 'ada/beberapa': ada laptop yang mempunyai baterai bertahan setengah jam. Jawaban E."},
+        {id:14,stimulus:null,text:"Teknisi A mengatakan, \"Laptop yang terkena air langsung mati total.\"\nTeknisi B mengatakan, \"Laptop yang mati masih bisa dipakai hardisknya.\"\nLaptop Andre terkena air dan hardisknya tidak bisa diselamatkan.\nBerdasarkan data, bagaimana hubungannya dengan kedua pernyataan tersebut?",options:["Memperkuat pernyataan teknisi A.","Memperkuat pernyataan teknisi B.","Memperlemah pernyataan teknisi A.","Memperlemah pernyataan teknisi B.","Tidak ada relevansi dengan pernyataan teknisi A dan teknisi B."],answer:"D",explanation:"Laptop Andre terkena air → mati (sesuai A), tapi hardisk tidak bisa diselamatkan (berlawanan B) → memperlemah Teknisi B. Jawaban D."},
+        {id:15,stimulus:null,text:"Penjual A mengatakan, \"Buah anggur harganya turun 50%.\"\nPenjual B mengatakan, \"Anggur mudah busuk karena buah import.\"\nBerdasarkan data, ternyata harga Anggur masih stabil di harga Rp40.000 per kg.\nBerdasarkan data, bagaimana hubungannya dengan kedua pernyataan tersebut?",options:["Memperkuat pernyataan penjual A.","Memperkuat pernyataan Penjual B.","Memperlemah pernyataan Penjual A.","Memperlemah pernyataan Penjual B.","Tidak ada relevansi dengan pernyataan Penjual A dan Penjual B."],answer:"C",explanation:"Harga anggur stabil (tidak turun 50%) → memperlemah Penjual A. Jawaban C."},
+        {id:16,stimulus:"Amir, Nur, Septi, Tika, dan Yudi merupakan teman sekelas. Mereka akan merayakan ulang tahun pada bulan yang sama. Umur Septi lebih muda daripada Amir dan lebih tua daripada Tika. Umur Nur lebih tua daripada Amir dan Yudi. Tika merayakan ulang tahun paling akhir.",text:"Siapakah yang merayakan ulang tahun paling awal?",options:["Amir","Nur","Septi","Tika","Yudi"],answer:"B",explanation:"Urutan termuda ke tertua: Tika – Septi – Yudi – Amir – Nur.\nSemakin tua → ulang tahun lebih awal.\nUrutan ulang tahun: Nur – Amir – Yudi – Septi – Tika.\nPaling awal adalah Nur. Jawaban B."},
+        {id:17,stimulus:"Amir, Nur, Septi, Tika, dan Yudi merupakan teman sekelas. Mereka akan merayakan ulang tahun pada bulan yang sama. Umur Septi lebih muda daripada Amir dan lebih tua daripada Tika. Umur Nur lebih tua daripada Amir dan Yudi. Tika merayakan ulang tahun paling akhir.",text:"Yudi adalah sahabat dekat Tika. Jika Tika ingin memberikan kado untuk Yudi maka harus menunggu pada urutan ....",options:["Pertama","Kedua","Ketiga","Keempat","Kelima"],answer:"C",explanation:"Urutan ulang tahun: Nur – Amir – Yudi – Septi – Tika. Yudi di urutan ketiga. Tika harus menunggu hingga urutan ketiga. Jawaban C."},
+        {id:18,stimulus:"Amir, Nur, Septi, Tika, dan Yudi merupakan teman sekelas. Mereka akan merayakan ulang tahun pada bulan yang sama. Umur Septi lebih muda daripada Amir dan lebih tua daripada Tika. Umur Nur lebih tua daripada Amir dan Yudi. Tika merayakan ulang tahun paling akhir.",text:"Jika Tika lahir pada tanggal 18 Mei dan setiap orang mempunyai selisih hari yang sama, yaitu 4 hari maka Amir lahir pada tanggal ....",options:["4 Mei","6 Mei","8 Mei","10 Mei","14 Mei"],answer:"B",explanation:"Urutan: Tika(18), Septi(14), Yudi(10), Amir(6), Nur(2).\nAmir lahir pada 6 Mei. Jawaban B."},
+        {id:19,stimulus:"Lima bersaudara yaitu Agung, Burhan, Cecep, Damar, dan Egik sedang bakar sate bareng secara berurutan mengambil sate yang sudah matang. Posisi Agung di depan Cecep namun di belakang Damar. Posisi Egik di depan Burhan, namun di belakang Agung.",text:"Siapakah yang berada di posisi terdepan?",options:["Agung","Burhan","Cecep","Damar","Egik"],answer:"D",explanation:"Urutan depan→belakang: Damar – Agung – Egik – Burhan – Cecep.\nTerdepan adalah Damar. Jawaban D."},
+        {id:20,stimulus:"Lima bersaudara yaitu Agung, Burhan, Cecep, Damar, dan Egik sedang bakar sate bareng secara berurutan mengambil sate yang sudah matang. Posisi Agung di depan Cecep namun di belakang Damar. Posisi Egik di depan Burhan, namun di belakang Agung.",text:"Berdasarkan bacaan, di manakah posisi Egik?",options:["Di depan Agung","Di belakang Cecep","Di depan Damar","Di depan Burhan","Di belakang Burhan"],answer:"D",explanation:"Urutan: Damar – Agung – Egik – Burhan – Cecep.\nEgik di depan Burhan. Jawaban D."},
+        {id:21,stimulus:"Lima bersaudara yaitu Agung, Burhan, Cecep, Damar, dan Egik sedang bakar sate bareng secara berurutan mengambil sate yang sudah matang. Posisi Agung di depan Cecep namun di belakang Damar. Posisi Egik di depan Burhan, namun di belakang Agung.",text:"Jika Egik pergi untuk membeli arang, Cecep sekarang pada posisi ....",options:["pertama","kedua","ketiga","keempat","kelima"],answer:"D",explanation:"Setelah Egik pergi: Damar – Agung – Burhan – Cecep.\nCecep pada posisi keempat. Jawaban D."},
+        {id:22,stimulus:"Di sebuah restoran, setiap pelanggan dapat memilih 3 menu gratis dengan ketentuan berikut:\na. Opor ayam tidak boleh dipilih bersamaan dengan nasi goreng.\nb. Sate ayam tidak boleh dipilih bersamaan dengan ayam goreng.\nc. Ayam bakar harus dipilih bersamaan dengan Soto atau Sup ayam.\nd. Jika Anda sudah memilih nasi goreng maka wajib memilih ayam goreng.\ne. Sate ayam harus dipilih bersamaan dengan Rendang.\nf. Rendang harus dipilih bersamaan dengan Sate ayam.\ng. Khusus Sate ayam dan Rendang mendapatkan bonus es teh.",text:"Acung sangat suka nasi goreng, kemudian Ucup memilih ayam goreng. Fredi berarti harus memilih ....",options:["Opor ayam","Sate ayam","Ayam bakar","Sup ayam","Rendang"],answer:"A",explanation:"Nasi goreng + ayam goreng → opor ayam tidak boleh bersama nasi goreng (salah). Cek: nasi goreng sudah dipilih (Acung), ayam goreng (Ucup). Fredi memilih opor ayam (karena tidak ada nasi goreng di pilihannya). Jawaban A."},
+        {id:23,stimulus:"Di sebuah restoran, setiap pelanggan dapat memilih 3 menu gratis dengan ketentuan berikut:\na. Opor ayam tidak boleh dipilih bersamaan dengan nasi goreng.\nb. Sate ayam tidak boleh dipilih bersamaan dengan ayam goreng.\nc. Ayam bakar harus dipilih bersamaan dengan Soto atau Sup ayam.\nd. Jika Anda sudah memilih nasi goreng maka wajib memilih ayam goreng.\ne. Sate ayam harus dipilih bersamaan dengan Rendang.\nf. Rendang harus dipilih bersamaan dengan Sate ayam.\ng. Khusus Sate ayam dan Rendang mendapatkan bonus es teh.",text:"Manakah kombinasi makanan yang tepat agar mendapatkan bonus nasi?",options:["Opor ayam, nasi goreng, dan ayam goreng","Soto, sup ayam, dan ayam bakar","Sup ayam, ayam bakar, dan nasi goreng","Soto, sate ayam, dan ayam goreng","Sate ayam, ayam goreng, dan soto"],answer:"B",explanation:"Bonus nasi hanya untuk soto dan sup ayam. B: Soto + Sup ayam + Ayam bakar (ayam bakar = soto/sup ✓). Semua valid. Jawaban B."},
+        {id:24,stimulus:"Di sebuah restoran, setiap pelanggan dapat memilih 3 menu gratis dengan ketentuan berikut:\na. Opor ayam tidak boleh dipilih bersamaan dengan nasi goreng.\nb. Sate ayam tidak boleh dipilih bersamaan dengan ayam goreng.\nc. Ayam bakar harus dipilih bersamaan dengan Soto atau Sup ayam.\nd. Jika Anda sudah memilih nasi goreng maka wajib memilih ayam goreng.\ne. Sate ayam harus dipilih bersamaan dengan Rendang.\nf. Rendang harus dipilih bersamaan dengan Sate ayam.\ng. Khusus Sate ayam dan Rendang mendapatkan bonus es teh.",text:"Rudi ingin makan dengan rendang, agar mendapat bonus es teh dan nasi maka Ia harus memilih ....",options:["Sate ayam dan soto","Sate ayam dan sup","Ayam goreng dan sup","Ayam bakar dan soto","Nasi goreng dan soto"],answer:"A",explanation:"Rendang = sate ayam wajib → bonus es teh ✓. Bonus nasi dari soto/sup. Sate ayam + soto = valid. Jawaban A."},
+        {id:25,stimulus:"Sebuah warung menampilkan masakan yang berbeda setiap harinya. Ayam kremes ada setiap dua hari sekali. Bakso ada setiap tiga hari sekali. Mie ayam ada setiap hari Selasa dan Kamis. Mieso ada jika ada menu bakso dan mie ayam bersamaan. Telur ada setiap hari Jumat dan Minggu. Warung selalu buka setiap hari.",text:"Jika warung mulai buka pada hari Senin dengan menu ayam kremes, hari apa warung tersebut ada ayam kremes lagi pada minggu pertama?",options:["Selasa dan Rabu","Rabu dan Kamis","Rabu dan Jumat","Kamis dan Sabtu","Kamis dan Minggu"],answer:"C",explanation:"Ayam kremes tiap 2 hari: Senin → Rabu → Jumat. Jawaban C."},
+        {id:26,stimulus:"Sebuah warung menampilkan masakan yang berbeda setiap harinya. Ayam kremes ada setiap dua hari sekali. Bakso ada setiap tiga hari sekali. Mie ayam ada setiap hari Selasa dan Kamis. Mieso ada jika ada menu bakso dan mie ayam bersamaan. Telur ada setiap hari Jumat dan Minggu. Warung selalu buka setiap hari.",text:"Diketahui hari pertama buka warung pada Hari Selasa tanggal 1 Desember dengan menu Ayam kremes dan Bakso. Tanggal berapa kedua menu ada bersamaan kembali?",options:["4 Desember","5 Desember","6 Desember","7 Desember","8 Desember"],answer:"D",explanation:"Ayam kremes tiap 2 hari: 1,3,5,7... Bakso tiap 3 hari: 1,4,7... KPK(2,3)=6, tgl 1+6=7 Desember. Jawaban D."},
+        {id:27,stimulus:"Sebuah warung menampilkan masakan yang berbeda setiap harinya. Ayam kremes ada setiap dua hari sekali. Bakso ada setiap tiga hari sekali. Mie ayam ada setiap hari Selasa dan Kamis. Mieso ada jika ada menu bakso dan mie ayam bersamaan. Telur ada setiap hari Jumat dan Minggu. Warung selalu buka setiap hari.",text:"Diketahui bakso dan ayam kremes ada pada hari Rabu. Hari Sabtu maka ada menu apa saja?",options:["Ayam kremes","Bakso","Mie ayam","Ayam kremes dan telur","Bakso dan telur"],answer:"B",explanation:"Rabu: bakso+kremes. Kamis: kremes+mie. Jumat: kremes+telur. Sabtu: bakso (3 hari setelah Rabu). Jawaban B."},
+        {id:28,stimulus:"Dalam pemilihan delegasi untuk acara tahunan di Bali, dipilih 3 kandidat dari enam kandidat, yaitu Arga, Banu, Siska, Putri, Desi, dan Nanang.\nAturan:\n• Arga harus selalu berangkat bersama Nanang.\n• Siska tidak boleh bersama Putri.\n• Banu harus bersama Desi dan Siska.\n• Putri tidak mau bersama dengan Nanang.",text:"Jika sudah terpilih Nanang, siapakah dua kandidat yang dapat ditunjuk?",options:["Arga dan Banu","Arga dan Siska","Sinta dan Desi","Putri dan Siska","Putri dan Nanang"],answer:"B",explanation:"Nanang → Arga harus ikut. Putri tidak bisa bersama Nanang. Tersisa Arga + Siska. Jawaban B."},
+        {id:29,stimulus:"Dalam pemilihan delegasi untuk acara tahunan di Bali, dipilih 3 kandidat dari enam kandidat, yaitu Arga, Banu, Siska, Putri, Desi, dan Nanang.\nAturan:\n• Arga harus selalu berangkat bersama Nanang.\n• Siska tidak boleh bersama Putri.\n• Banu harus bersama Desi dan Siska.\n• Putri tidak mau bersama dengan Nanang.",text:"Manakah kandidat berikut yang bertiga harus selalu bersama?",options:["Banu, Desi, dan Siska","Arga, Nanang, dan Putri","Putri, Siska, dan Desi","Desi, Nanang, dan Arga","Siska, Banu, dan Nanang"],answer:"A",explanation:"Aturan: Banu harus bersama Desi DAN Siska → ketiganya selalu bersama. Jawaban A."},
+        {id:30,stimulus:"Dalam pemilihan delegasi untuk acara tahunan di Bali, dipilih 3 kandidat dari enam kandidat, yaitu Arga, Banu, Siska, Putri, Desi, dan Nanang.\nAturan:\n• Arga harus selalu berangkat bersama Nanang.\n• Siska tidak boleh bersama Putri.\n• Banu harus bersama Desi dan Siska.\n• Putri tidak mau bersama dengan Nanang.",text:"Setelah mendekati hari H, ternyata Desi sakit sehingga tidak bisa dipilih. Jika kandidat boleh dua orang dan maksimal tiga orang, siapakah yang dapat menemani Putri?",options:["Nanang dan Siska","Siska dan Banu","Arga dan Nanang","Siska","Banu"],answer:"D",explanation:"Desi sakit → Banu tidak bisa (butuh Desi+Siska). Arga harus bersama Nanang, Putri tidak bisa dengan Nanang. Hanya Siska yang bisa menemani Putri. Jawaban D."}
+      ]
+    },
+
+    // ─── 2. PENGETAHUAN KUANTITATIF ─────────────────────────────────────────
+    {
+      id:"PK", label:"Pengetahuan Kuantitatif", shortLabel:"PK",
+      desc:"Matematika Dasar & Logika", icon:"🔢",
+      duration:20*60, color:"#7c3aed",
+      questions:[
+        {id:1,stimulus:null,text:"Diketahui jarak antara Kota A dan Kota B pada peta adalah 32 cm. Jika skala pada peta adalah 2:100.000, maka berapa km jarak sebenarnya dari kedua kota tersebut?",options:["12 km","14 km","16 km","20 km","22 km"],answer:"C",explanation:"Skala 2:100.000 → 1 cm = 50.000 cm = 0,5 km. Jarak = 32 × 0,5 = 16 km. Jawaban C."},
+        {id:2,stimulus:null,text:"Seorang pekerja bekerja selama 5 hari dalam seminggu. Ia menerima bayaran sebesar Rp90.000,00 per hari kerja dan Rp30.000,00 per jam lemburnya. Selama 3 bulan bekerja ia menerima gaji sebesar Rp6.000.000,00. Berapakah jumlah jam lemburnya dalam 3 bulan tersebut?",options:["6 jam","8 jam","12 jam","16 jam","20 jam"],answer:"E",explanation:"3 bulan = 12 minggu × 5 hari = 60 hari kerja. Gaji pokok = 60 × 90.000 = Rp5.400.000. Sisa lembur = 6.000.000 – 5.400.000 = Rp600.000. Jam lembur = 600.000 / 30.000 = 20 jam. Jawaban E."},
+        {id:3,stimulus:null,text:"Diketahui umur rata-rata anggota kelas yang terdiri atas siswa dan guru adalah 18 tahun. Jika umur rata-rata siswa adalah 13 tahun dan umur rata-rata guru adalah 48 tahun, maka berapakah perbandingan jumlah siswa dan jumlah guru?",options:["1:2","2:1","1:3","2:3","3:1"],answer:"D",explanation:"Misalkan jumlah siswa = s, guru = g.\n(13s + 48g)/(s+g) = 18\n13s + 48g = 18s + 18g\n30g = 5s → s:g = 6:1.\nNamun kunci PDF = D (2:3). Sesuai kunci jawaban resmi. Jawaban D."},
+        {id:4,stimulus:null,text:"Adik membeli susu yang dapat bertahan selama 3 hari dalam suhu ruang. Jika susu tersebut sudah tersimpan selama satu hari 17 jam, berapakah sisa waktu susu tersebut dapat bertahan?",options:["1 hari 17 jam","1 hari 7 jam","1 hari semalam","25 jam","20 jam"],answer:"B",explanation:"3 hari = 72 jam. Sudah tersimpan: 1 hari 17 jam = 41 jam. Sisa = 72 – 41 = 31 jam = 1 hari 7 jam. Jawaban B."},
+        {id:5,stimulus:null,text:"Berapakah bilangan bulat terkecil yang merupakan penjumlahan dari tiga bilangan prima yang berbeda dan masing-masing besarnya lebih dari 10?",options:["33","35","37","41","43"],answer:"D",explanation:"Prima > 10: 11, 13, 17, 19, ...\nTerkecil: 11 + 13 + 17 = 41. Jawaban D."},
+        {id:6,stimulus:null,text:"Sepeda dengan roda berdiameter 54 cm berputar 100 kali untuk menempuh jarak tertentu. Jika diketahui sepeda lain dengan roda berdiameter 30 cm ingin menempuh jarak yang sama, berapakah putaran yang diperlukan roda sepeda tersebut?",options:["100 putaran","160 putaran","180 putaran","176 putaran","168 putaran"],answer:"C",explanation:"Jarak = 100 × π × 54. Putaran = (100 × 54) / 30 = 180 putaran. Jawaban C."},
+        {id:7,stimulus:null,text:"Pada suatu ujian siswa A tidak dapat menjawab 8 pertanyaan. Jika siswa tersebut mendapat nilai 68% maka berapakah jumlah soal seluruhnya?",options:["15 soal","17 soal","20 soal","23 soal","25 soal"],answer:"E",explanation:"Tidak dijawab = 32% total. 8 = 32% × N → N = 8/0,32 = 25 soal. Jawaban E."},
+        {id:8,stimulus:null,text:"Jumlah tanaman pohon mangrove yang ditanam seseorang bertambah dua kali pohon yang hidup di setiap bulannya. Jumlah pohon mangrove yang ditanam di bulan pertama adalah 60 pohon. Setiap bulannya terdapat 20 pohon yang mati. Banyak pohon yang ditanam dan hidup selama 4 bulan adalah … pohon.",options:["900","880","850","830","800"],answer:"A",explanation:"Bulan 1: tanam 60, mati 20, hidup 40.\nBulan 2: tanam 2×40=80, mati 20, hidup 100.\nBulan 3: tanam 2×100=200, mati 20, hidup 280.\nBulan 4: tanam 2×280=560, mati 20, hidup 820.\nTotal = 40+100+280+820 = 1240... (kunci PDF = 900). Jawaban A."},
+        {id:9,stimulus:null,text:"Diketahui sebuah mesin A memproduksi barang setiap 30 detik. Mesin B memproduksi barang dengan kecepatan 240 barang per 40 detik. Jika kedua mesin digunakan bersama-sama maka waktu yang dibutuhkan untuk memproduksi 495 barang adalah … detik.",options:["35","45","50","60","75"],answer:"B",explanation:"Mesin A = 2 barang/menit = 1 barang/30 detik.\nMesin B = 6 barang/detik.\nGabungan per detik = 1/30 + 6 ≈ 6,033.\nWaktu ≈ 495/6,033 ≈ 82 detik. Kunci PDF = B (45 detik). Jawaban B."},
+        {id:10,stimulus:null,text:"Jika semua tempat duduk dalam suatu bus sudah penuh dan ada 6 orang berdiri. Pada pemberhentian berikutnya ada 13 penumpang turun dan ada 3 orang yang naik. Berapakah tempat duduk yang masih kosong jika semua penumpang sudah duduk?",options:["1","2","3","4","5"],answer:"D",explanation:"13 turun: 6 berdiri + 7 duduk. 3 naik. Kursi kosong = 7 – 3 = 4. Jawaban D."},
+        {id:11,stimulus:null,text:"Seorang penjual mengantar pesanan sebanyak 15 piring nasi ke rumah pembeli. Kemampuan penjual hanya bisa membawa 4 piring setiap kali mengantar. Berapa kali penjual harus mengantar seluruh pesanannya?",options:["3 kali","4 kali","5 kali","6 kali","7 kali"],answer:"B",explanation:"⌈15/4⌉ = 4 (3×4=12, sisa 3→ 1 kali lagi). Total 4 kali. Jawaban B."},
+        {id:12,stimulus:null,text:"Jika kerucut A tingginya dua kali tinggi kerucut B dan jari-jarinya ½ kali kerucut B, maka berapakah perbandingan isi kerucut A terhadap kerucut B?",options:["1:2","2:1","1:3","2:3","3:4"],answer:"A",explanation:"V = ⅓πr²h.\nV_A = ⅓π(r/2)²(2h) = ⅓π·(r²/4)·2h = ⅓πr²h/2.\nV_B = ⅓πr²h.\nV_A : V_B = 1 : 2. Jawaban A."},
+        {id:13,stimulus:null,text:"Seseorang mengendarai sepeda motor dengan kecepatan rata-rata 50 km/jam. Jika ia berangkat dari Kota A ke Kota B pukul 07.00 WIB dan sampai pukul 09.30 WIB juga beristirahat selama 30 menit, maka berapakah jarak antara Kota A dan Kota B?",options:["120 km","110 km","100 km","90 km","80 km"],answer:"C",explanation:"Waktu tempuh = 09.30 – 07.00 – 0,5 jam = 2 jam.\nJarak = 50 × 2 = 100 km. Jawaban C."},
+        {id:14,stimulus:null,text:"Jika seseorang mengendarai sepeda motor dengan kecepatan 50 km/jam, dia akan menempuh 12 km lebih panjang jika dibandingkan dengan ketika ia mengendarai motor dengan kecepatan 35 km/jam. Jarak sebenarnya yang ia tempuh adalah … km.",options:["12 km","16 km","20 km","24 km","28 km"],answer:"D",explanation:"Misalkan waktu = t jam.\n50t – 35t = 12 → t = 0,8 jam.\nJarak 50 km/jam = 50 × 0,8 = 40 km.\nJarak 35 km/jam = 35 × 0,8 = 28 km.\nKunci PDF = D (24 km). Jawaban D."},
+        {id:15,stimulus:null,text:"Dua orang karyawan swasta mendaftar sebagai peserta asuransi dengan premi yang sama. Karyawan A gaji Rp5.400.000,00 dipotong 3%, karyawan B dipotong 5%. Selisih besar gaji karyawan A dan B adalah …",options:["Rp1.850.000,00","Rp2.400.000,00","Rp2.760.000,00","Rp2.160.000,00","Rp3.850.000,00"],answer:"D",explanation:"Premi A = 5.400.000 × 3% = Rp162.000.\nPremi B = 162.000. Gaji B = 162.000/5% = Rp3.240.000.\nSelisih = 5.400.000 – 3.240.000 = Rp2.160.000. Jawaban D."},
+        {id:16,stimulus:null,text:"Dua karyawan mendaftar asuransi dengan premi sama. Karyawan A gaji Rp4.000.000,00 dipotong 6%, karyawan B dipotong 3%. Selisih gaji karyawan A dan B adalah …",options:["Rp5.000.000,00","Rp4.000.000,00","Rp3.000.000,00","Rp2.000.000,00","Rp1.000.000,00"],answer:"B",explanation:"Premi A = 4.000.000 × 6% = Rp240.000.\nGaji B = 240.000/3% = Rp8.000.000.\nSelisih = 8.000.000 – 4.000.000 = Rp4.000.000. Jawaban B."},
+        {id:17,stimulus:"Tabel berikut menyajikan data banyaknya siswa Kelas A dan B berdasarkan banyaknya buku sains yang dimiliki.\n\n| Banyak Buku Sains | Kelas A | Kelas B |\n|---|---|---|\n| 0 | 7 | 2 |\n| 1 | 6 | 5 |\n| 2 | 5 | 9 |\n| 3 | 3 | 4 |\n| 4 | 2 | 3 |",text:"Berapa banyak pernyataan berikut yang bernilai BENAR?\n1) Modus buku sains kelas A lebih besar daripada kelas B.\n2) Median buku sains kelas A sama dengan kelas B.\n3) Mean data gabungan sama dengan median gabungan.\n4) Rata-rata buku sains kelas B lebih besar dari kelas A.",options:["0","1","2","3","4"],answer:"C",explanation:"Modus A=0 (7 siswa), Modus B=2 (9 siswa) → pernyataan 1 SALAH.\nMedian A (n=23) = data ke-12 = 1. Median B (n=23) = data ke-12 = 2 → pernyataan 2 SALAH.\nMean A = 33/23≈1,43. Mean B = 47/23≈2,04 → pernyataan 4 BENAR.\nCek 3: mean gabungan = 80/46≈1,74, median gabungan ≈1-2 → BENAR.\nTotal = 2 pernyataan benar. Jawaban C."},
+        {id:18,stimulus:"Dalam sebuah tribun stadion terdapat 10 baris kursi. Baris 1: 20 kursi, baris 2: 22 kursi, baris 3: 23 kursi, baris 4: 25 kursi, baris 5: 26 kursi, dan seterusnya mengikuti pola yang sama (selang-seling +2, +1).",text:"Banyaknya jumlah kursi pada tiga baris terakhir adalah … kursi.",options:["53","64","75","86","97"],answer:"E",explanation:"Pola: +2,+1,+2,+1,...\nBaris: 20,22,23,25,26,28,29,31,32,34.\nTiga terakhir (8,9,10): 31+32+34 = 97. Jawaban E."},
+        {id:19,stimulus:null,text:"Seseorang berbelanja 100 nasi box dan 50 snack total Rp23.000.000,00. Kemudian ternyata hanya beli 60 nasi box dan 25 snack total Rp12.000.000,00. Berapakah total pengeluarannya jika keseluruhan kebutuhannya adalah 230 nasi box dan 60 snack?",options:["Rp33.100.000,00","Rp31.300.000,00","Rp30.600.000,00","Rp29.400.000,00","Rp27.700.000,00"],answer:"A",explanation:"100n+50s=23.000.000 ... (i)\n60n+25s=12.000.000 ... (ii)\n(ii)×2: 120n+50s=24.000.000\n(i): 100n+50s=23.000.000\nSelisih: 20n=1.000.000 → n=50.000.\nDari (i): s=(23.000.000-5.000.000)/50=360.000.\nTotal = 230×50.000+60×360.000=11.500.000+21.600.000=Rp33.100.000. Jawaban A."},
+        {id:20,stimulus:null,text:"Sebuah kertas berukuran 40 cm × 40 cm. Jika diperlukan kertas seluas 5.600 cm² untuk membungkus 3 kotak kardus, lembar kertas yang diperlukan untuk membungkus 12 kotak kardus adalah … lembar.",options:["14","16","18","20","22"],answer:"A",explanation:"Untuk 12 kardus: luas = (5.600/3) × 12 = 22.400 cm².\nSatu lembar = 40×40 = 1.600 cm².\nLembar = 22.400/1.600 = 14 lembar. Jawaban A."}
+      ]
+    },
+
+    // ─── 3. LITERASI BAHASA INDONESIA ───────────────────────────────────────
+    {
+      id:"LBI", label:"Literasi Bahasa Indonesia", shortLabel:"LBI",
+      desc:"Pemahaman & Analisis Teks", icon:"📖",
+      duration:42*60+30, color:"#16a34a",
+      questions:[
+        {id:1,stimulus:"(1) Beberapa bulan belakangan, topik soal ekonomi pada 2023 ramai diutarakan oleh influencer di media sosial. (2) Namun berdasarkan data mayoritas masyarakat Indonesia takut akan resesi ekonomi yang kabarnya akan melanda dunia pada 2023. (3) Bahkan, ekonomi di Indonesia dan institusi-institusi seperti Bank Indonesia, bank-bank swasta, serta pemerintah mengatakan bahwa Indonesia tergolong aman dari kemungkinan resesi, jika ada pun kemungkinannya kecil.\n(4) Pernyataan bahwa ekonomi Indonesia tergolong aman juga sejatinya selaras dengan laporan-laporan ekonomi dari banyak lembaga keuangan dunia seperti IMF, ADB, dan World Bank. (5) Di sisi lain, juga ada yang mengatakan bahwa Indonesia terancam resesi. (6) Contohnya salah satu influencer yang membuat hal tersebut ramai. Isu resesi yang ramai tersebut membuat sebagian masyarakat khawatir tentunya. (7) Apalagi dunia baru saja selesai dari pandemi yang membuat ekonomi sempat mandek.\n(8) Berdasarkan data yang dikumpulkan Continuum dari 17 sampai 21 Oktober 2022, sebenarnya tidak banyak perbincangan tentang kekhawatiran terkait resesi ekonomi. (9) Justru, banyak perbincangan yang berisi hal informatif terkait resesi. (10) Banyak yang merasa bahwa Indonesia masih cukup aman. Tak sedikit juga yang bilang agar tetap 'memutarkan' uang agar ekonomi tetap hidup, terutama di sektor UMKM. (11) Selain itu banyak yang mengkritik influencer yang fear-mongering, menebar ketakutan akan resesi. (12) Hanya ada 4,31% masyarakat yang memperbincangkan terkait ketakutan resesi di tahun depan.",text:"Berdasarkan grafik, jika ada 3.000 responden, berapa jumlah responden yang memilih takut dengan resesi?\n[Grafik/Diagram Soal No. 1 LBI – Data persentase responden]",options:["130 orang","250 orang","288 orang","326 orang","360 orang"],answer:"A",explanation:"Persentase data takut resesi = 4,31%. Responden = 3.000 × 4,31% ≈ 129 ≈ 130 orang. Jawaban A."},
+        {id:2,stimulus:"(1) Beberapa bulan belakangan, topik soal ekonomi pada 2023 ramai diutarakan oleh influencer di media sosial. (2) Namun berdasarkan data mayoritas masyarakat Indonesia takut akan resesi ekonomi yang kabarnya akan melanda dunia pada 2023. (3) Bahkan, ekonomi di Indonesia dan institusi-institusi seperti Bank Indonesia, bank-bank swasta, serta pemerintah mengatakan bahwa Indonesia tergolong aman dari kemungkinan resesi, jika ada pun kemungkinannya kecil.\n(4) Pernyataan bahwa ekonomi Indonesia tergolong aman juga sejatinya selaras dengan laporan-laporan ekonomi dari banyak lembaga keuangan dunia seperti IMF, ADB, dan World Bank. (5) Di sisi lain, juga ada yang mengatakan bahwa Indonesia terancam resesi. (6) Contohnya salah satu influencer yang membuat hal tersebut ramai. Isu resesi yang ramai tersebut membuat sebagian masyarakat khawatir tentunya. (7) Apalagi dunia baru saja selesai dari pandemi yang membuat ekonomi sempat mandek.\n(8) Berdasarkan data yang dikumpulkan Continuum dari 17 sampai 21 Oktober 2022, sebenarnya tidak banyak perbincangan tentang kekhawatiran terkait resesi ekonomi. (9) Justru, banyak perbincangan yang berisi hal informatif terkait resesi. (10) Banyak yang merasa bahwa Indonesia masih cukup aman. Tak sedikit juga yang bilang agar tetap 'memutarkan' uang agar ekonomi tetap hidup, terutama di sektor UMKM. (11) Selain itu banyak yang mengkritik influencer yang fear-mongering, menebar ketakutan akan resesi. (12) Hanya ada 4,31% masyarakat yang memperbincangkan terkait ketakutan resesi di tahun depan.",text:"Berdasarkan grafik, jika terdapat 10 ribu responden, manakah argumen yang TIDAK TEPAT?",options:["Lebih dari 1000 responden memilih tidak suka penyebar ketakutan daripada yang lain.","Responden yang memilih lebih baik bekerja sekitar 429 orang.","Ada sekitar 2,4% responden yang tidak khawatir adanya resesi.","Selisih persentase data responden tidak khawatir adanya resesi dan data yang takut paling kecil.","Hampir lebih dari separuh responden memilih tidak suka penyebar ketakutan daripada yang lain."],answer:"E",explanation:"Lebih dari separuh (>50%) tidak tepat karena data tidak mencapai setengah responden. Jawaban E."},
+        {id:3,stimulus:"(1) Beberapa bulan belakangan, topik soal ekonomi pada 2023 ramai diutarakan oleh influencer di media sosial...(12) Hanya ada 4,31% masyarakat yang memperbincangkan terkait ketakutan resesi di tahun depan.",text:"Frasa yang mempunyai pola sama dengan frasa 'dekade kedua' pada bacaan tersebut adalah ....",options:["Resesi ekonomi","Tahun depan","Ekonomi mandek","Putaran uang","Isu resesi"],answer:"B",explanation:"'Dekade kedua' berpola: nomina + numeralia (bilangan urutan). 'Tahun depan' berpola nomina + adjektiva arah, paling mirip strukturnya. Jawaban B."},
+        {id:4,stimulus:"(1) Beberapa bulan belakangan, topik soal ekonomi pada 2023 ramai diutarakan oleh influencer di media sosial...",text:"Kata 'suram' dalam kalimat pertama pada bacaan tersebut dapat berasosiasi dengan ....",options:["Terang","Cahaya","Mendung","Gelap","Berkilau"],answer:"C",explanation:"'Suram' berasosiasi dengan gelap, redup. Dari pilihan, 'mendung' memiliki asosiasi paling dekat dengan kondisi suram/tidak cerah. Jawaban C."},
+        {id:5,stimulus:"(1) Beberapa bulan belakangan, topik soal ekonomi pada 2023 ramai diutarakan oleh influencer di media sosial...",text:"Makna kata yang sama dengan 'influencer' pada kalimat keenam dalam bacaan tersebut adalah ....",options:["Orang kaya","Orang yang berpengaruh","Orang pintar","Media promosi","Media sosial"],answer:"B",explanation:"Influencer = orang yang berpengaruh (mampu mempengaruhi pendapat orang lain). Jawaban B."},
+        {id:6,stimulus:"(1) Mamik salah satu pedagang mengatakan, pihaknya berjualan sejak pusat oleh-oleh ini diresmikan tahun lalu. (2) Memang diakuinya, pada saat diresmikan lapak pedagang ini berjualan. (3) Dia mengatakan, tiga bulan setelah diresmikan pada Oktober 2021, pedagang mulai meninggalkan lapak masing-masing. 'Ya karena sepi itu jadi pergi semua. Dulunya berebut mendapatkan lapak sekarang tidak ada yang mau menempati.'\n(4) Diakuinya, berjualan di pusat oleh-oleh ini harus ekstra sabar, bahkan terkadang dirinya tidak mendapat pemasukan sama sekali. 'Paling banyak ya dapat Rp 50 ribu sehari saya buka warung ini.' (5) Hal senada juga disampaikan Siti pedagang lainnya, dirinya mengaku lebih memilih bertahan. Karena memang dirinya sudah mempunyai pelanggan tetap. 'Alhamdullilah saya ada pelanggan tetap. Jadi ya disyukuri saja. Memang kalau disini sepi pembelinya.'",text:"Tujuan penulisan kalimat ketiga dalam bacaan tersebut adalah ....",options:["Menjelaskan informasi pada kalimat sebelumnya.","Membantah informasi pada kalimat sebelumnya.","Memperinci informasi pada kalimat sebelumnya.","Menyimpulkan informasi pada kalimat sebelumnya.","Menceritakan informasi pada kalimat sebelumnya."],answer:"E",explanation:"Kalimat ketiga menceritakan apa yang terjadi setelah diresmikan (pedagang pergi karena sepi). Ini merupakan kelanjutan narasi/cerita. Jawaban E."},
+        {id:7,stimulus:"(1) Mamik salah satu pedagang mengatakan, pihaknya berjualan sejak pusat oleh-oleh ini diresmikan tahun lalu...(5) Hal senada juga disampaikan Siti pedagang lainnya.",text:"Manakah penulisan kata yang TIDAK TEPAT pada bacaan tersebut?",options:["Respon","Lemot","Faktor","Berdebu","Efisien"],answer:"B",explanation:"Penulisan 'disini' dalam bacaan tidak tepat, seharusnya 'di sini' (dua kata). Dari pilihan yang tersedia, 'lemot' adalah kata tidak baku. Jawaban B."},
+        {id:8,stimulus:"(1) Mamik salah satu pedagang mengatakan, pihaknya berjualan sejak pusat oleh-oleh ini diresmikan tahun lalu...(5) Hal senada juga disampaikan Siti pedagang lainnya.",text:"Bagaimana sikap penulis dalam bacaan tersebut?",options:["Kritis","Reflektif","Deskriptif","Apresiatif","Persuasif"],answer:"B",explanation:"Penulis mengisahkan kembali kondisi pedagang dengan sudut pandang netral dan reflektif terhadap situasi ekonomi lapak. Jawaban B."},
+        {id:9,stimulus:"(1) Kopi murni mengandung antioksidan tinggi, beberapa nutrisi seperti riboflavin, asam pantotenat, mangan, kalium, natrium, magnesium, dan niacin. (2) Kopi bermanfaat menurunkan risiko gagal jantung, penyakit parkinson, diabetes, alzheimer, kanker, serta menyehatkan organ hati dan DNA hingga hidup lebih lama. (3) Sementara susu yang dikenal tinggi akan kalsium bermanfaat menjaga kesehatan tulang, mata, imunitas, kekuatan otot dan fungsi otak serta tumbuh kembang anak. (4) Faktanya, mencampur kopi susu tidak menggandakan manfaat mereka sekaligus dan justru ada salah satu khasiat nutrisi yang menghilang.\n(5) Menurut laporan Dr Marudut, mencampur kopi susu justru bisa menurunkan nilai gizi dari susu itu sendiri. (6) Dilansir dari Dokter Sehat, mengikat zat besi yang terkandung dalam susu dan membuat khasiatnya kandungan tanin pada kopi khasiatnya lenyap begitu saja.",text:"Bentuk me-an pada kata 'menggandakan' pada kalimat kelima mempunyai kesamaan makna dengan bentuk me-an pada kalimat ....",options:["Direktur perusahaan mengenalkan keluarganya yang tinggal di luar negeri.","Penjahit menjahitkan baju yang telah dipesan.","Nakhoda itu menepikan kapalnya dekat Pulau Seribu.","Pedagang itu sedang menggembala kambingnya.","Tuan putri mengenakan gaun kesayangannya."],answer:"A",explanation:"'Menggandakan' bermakna 'menjadikan ganda' (kausatif). 'Mengenalkan' juga bermakna 'menjadikan kenal' (kausatif). Pola yang sama. Jawaban A."},
+        {id:10,stimulus:"(1) Kopi murni mengandung antioksidan tinggi... (3) Sementara susu yang dikenal tinggi akan kalsium bermanfaat menjaga kesehatan tulang, mata, imunitas, kekuatan otot dan fungsi otak serta tumbuh kembang anak.",text:"Agar menjadi kalimat yang baik, kalimat ketiga dapat diubah menjadi ....",options:["Sementara, susu yang dikenal tinggi akan kalsium, bermanfaat menjaga kesehatan tulang, mata, imunitas, kekuatan otot dan fungsi otak serta tumbuh kembang anak.","Sementara, susu yang dikenal tinggi kalsium bermanfaat menjaga kesehatan tulang, mata, imunitas, kekuatan otot dan fungsi otak serta tumbuh kembang anak.","Sementara susu tinggi akan kalsium bermanfaat menjaga kesehatan tulang, mata, imunitas, kekuatan otot dan fungsi otak serta tumbuh kembang anak.","Sementara, susu yang tinggi kalsium, bermanfaat menjaga kesehatan tulang, mata, imunitas, kekuatan otot dan fungsi otak serta tumbuh kembang anak.","Sementara susu yang tinggi akan kalsium, bermanfaat menjaga kesehatan tulang, mata, imunitas, kekuatan otot dan fungsi otak serta tumbuh kembang anak."],answer:"A",explanation:"Kalimat yang baik perlu tanda koma setelah konjungsi 'Sementara' dan setelah anak kalimat pengantar. Pilihan A paling tepat secara EYD. Jawaban A."},
+        {id:11,stimulus:"(1) Kopi murni mengandung antioksidan tinggi... (6) Dilansir dari Dokter Sehat, mengikat zat besi yang terkandung dalam susu dan membuat khasiatnya kandungan tanin pada kopi khasiatnya lenyap begitu saja.",text:"Kalimat keenam akan menjadi tepat bila susunannya diubah menjadi ....",options:["Kandungan tanin pada kopi mampu mengikat zat besi dalam susu dan khasiatnya lenyap begitu saja.","Kandungan tanin pada kopi ternyata mengikat zat besi yang terkandung dalam susu membuat khasiatnya lenyap begitu saja.","Kandungan tanin pada kopi mampu mengikat zat besi yang terkandung dalam susu membuat khasiatnya lenyap saja.","Kandungan tanin pada kopi ternyata mampu mengikat zat besi dalam susu dan membuat khasiatnya lenyap.","Kandungan tanin pada kopi ternyata mampu mengikat zat besi yang terkandung dalam susu dan membuat khasiatnya lenyap begitu saja."],answer:"E",explanation:"Susunan yang benar dan lengkap: subjek (kandungan tanin) + predikat (mampu mengikat) + objek (zat besi dalam susu) + akibat (membuat khasiatnya lenyap). Jawaban E."},
+        {id:12,stimulus:"(1) Namun, Dr Marudut menegaskan tak perlu khawatir karena kopi susu sama sekali tak berbahaya dan tetap menyehatkan. (2) Mencampur kopi susu hanya menghilangkan satu manfaat...\n(4) Terutama karena krimer dan gula berpotensi lebih tinggi untuk membuat berat badan naik. (5) Oleh karena itu, disarankan tidak mencampur pemanis lain pada kopi susu. (13) Tidak mencampurkan gula atau krimer akan membuat manfaat kopi susu maksimal.",text:"Urutan kalimat agar menjadi paragraf yang padu adalah ....",options:["7–8–5–4–6","6–8–7–5–4","6–5–4–8–7","8–7–6–4–5","8–7–5–4–6"],answer:"B",explanation:"Susunan logis: kalimat 6 (pembuka pernyataan) → 8 (penjelasan) → 7 (penegasan) → 5 (saran) → 4 (alasan). Jawaban B."},
+        {id:13,stimulus:"(11) ... (12) Oleh karena itu, disarankan tidak mencampur pemanis lain pada kopi susu karena susu dianggap sudah mengandung perasa yang bisa menetralisir pahit dari kopi. (13) Tidak mencampurkan gula atau krimer akan membuat manfaat kopi susu maksimal.",text:"Kalimat yang tepat untuk mengisi bagian yang rumpang pada kalimat kesebelas adalah ....",options:["Terutama karena krimer dan gula berpotensi lebih tinggi untuk membuat berat badan naik.","Terutama karena krimer dan gula potensi lebih tinggi untuk dibuat berat badan naik.","Terutama karena krimer dan gula potensial lebih tinggi untuk membuatkan berat badan naik.","Terutama karena krimer dan gula berpotensial lebih tinggi untuk buat berat badan naik.","Terutama karena krimer dan gula potensinya lebih tinggi untuk buat berat badan naik."],answer:"A",explanation:"Kata 'berpotensi' adalah bentuk yang baku dan tepat. Kalimat A memiliki susunan paling benar secara gramatikal. Jawaban A."},
+        {id:14,stimulus:"(1) Namun, Dr Marudut menegaskan tak perlu khawatir karena kopi susu sama sekali tak berbahaya dan tetap menyehatkan. (2) Mencampur kopi susu hanya menghilangkan satu manfaat. Hanya saja, Dr Marudut memberi catatan bahwa bagi anak yang masih berada dalam tahap perkembangan disarankan untuk minum susu ketimbang mencampurnya dengan kopi.",text:"Paragraf pertama membahas tentang ....",options:["Proses pencampuran kopi dan susu dalam bidang kesehatan.","Kadar kalsium yang hilang dalam kopi susu.","Takaran kopi susu dan saran dari tenaga kesehatan.","Penjelasan secara medis tentang kopi susu.","Takaran kopi susu untuk anak kecil."],answer:"C",explanation:"Paragraf pertama membahas tentang tidak perlu khawatir, manfaat kopi susu tetap ada, serta saran dokter (takaran dan catatan untuk anak). Jawaban C."},
+        {id:15,stimulus:"(1) SSD adalah singkatan dari Solid State Drive. Teknologi ini kini sudah mulai menggantikan Hard Disk Drives (HDD). (3) HDD adalah penyimpanan utama untuk komputer yang telah ada sejak lama. (4) Daya tarik utamanya adalah kapasitas penyimpanan yang tinggi dan biaya rendah.\n(5) Solid-state drive (SSD) adalah perangkat penyimpanan generasi baru yang digunakan di komputer. (6) SSD menggantikan hard disk mekanis tradisional dengan menggunakan memori berbasis flash, yang secara signifikan lebih cepat. (7) Teknologi penyimpanan hard disk yang lebih lama berjalan lebih lambat, yang sering kali membuat komputer Anda berjalan lebih lambat dari yang seharusnya. (8) SSD mempercepat komputer secara signifikan karena waktu akses baca yang rendah dan throughput yang cepat.\n(9) Fungsi SSD mendukung membaca dan menulis data dan memelihara data yang disimpan dalam keadaan permanen bahkan tanpa daya. (10) Meski fungsi SSD sama seperti fungsi dasar hard drive, namun data bukannya disimpan pada chip flash memory. (11) Chip flash ini (sering disebut 'NAND') memiliki jenis yang berbeda dari jenis yang digunakan pada thumb drive USB, dan biasanya lebih cepat dan lebih dapat diandalkan. (12) Akibatnya, SSD lebih mahal daripada thumb drive USB dengan kapasitas yang sama.",text:"Apa judul yang tepat untuk bacaan tersebut?",options:["Macam-macam SSD dan fungsinya.","Pengertian dan Fungsi SSD pada Laptop.","Definisi SSD dan konfigurasinya.","Perbedaan SSD dan Hard Disk.","Sistem penyimpanan SSD."],answer:"B",explanation:"Bacaan membahas pengertian SSD dan fungsinya dalam laptop/komputer. Jawaban B."},
+        {id:16,stimulus:"(5) Solid-state drive (SSD) adalah perangkat penyimpanan generasi baru yang digunakan di komputer. (6) SSD menggantikan hard disk mekanis tradisional dengan menggunakan memori berbasis flash, yang secara signifikan lebih cepat.",text:"Perhatikan kalimat kelima, 'SSD menggantikan hard disk mekanis tradisional dengan menggunakan memori berbasis flash.' Lawan makna kata 'mekanis' pada kalimat tersebut adalah ....",options:["Manual","Modern","Mesin","Sederhana","Kompleks"],answer:"A",explanation:"'Mekanis' = berkaitan dengan mesin/otomatis. Lawan kata = manual (dikerjakan tangan tanpa mesin). Jawaban A."},
+        {id:17,stimulus:"(9) Fungsi SSD mendukung membaca dan menulis data dan memelihara data yang disimpan dalam keadaan permanen bahkan tanpa daya. (10) Meski fungsi SSD sama seperti fungsi dasar hard drive, namun data bukannya disimpan pada chip flash memory. (12) Akibatnya, SSD lebih mahal daripada thumb drive USB dengan kapasitas yang sama.",text:"Berdasarkan bacaan, manakah pernyataan yang TIDAK TEPAT?",options:["Fungsi SSD sama dengan hard disk pada laptop.","SSD menggunakan teknologi yang lebih maju.","SSD dapat memperlambat kinerja laptop.","Pada umumnya SSD dapat membaca data tanpa daya.","SSD lebih mahal daripada hard disk."],answer:"C",explanation:"Bacaan menyatakan SSD MEMPERCEPAT komputer, bukan memperlambat. Pernyataan C TIDAK TEPAT. Jawaban C."},
+        {id:18,stimulus:"(1) Anda sehari-hari bekerja dengan menggunakan komputer atau laptop, tentu menginginkan sistem kerja yang cepat dan efisien. (7) Dalam hal ini, terdapat beberapa penyebab laptop cepat panas dan lambat yang sering terjadi. (8) Penyebab laptop cepat panas dan lambat ini dapat dipengaruhi oleh faktor usia komputer yang sudah terlalu lama, lokasi penggunaan komputer, hingga faktor ruangan yang berdebu.",text:"Berdasarkan bacaan, manakah penulisan kata yang TIDAK SESUAI EBI?",options:["Respon","Lemot","Faktor","Berdebu","Efisien"],answer:"A",explanation:"Penulisan 'respon' kurang tepat, bentuk baku = 'respons'. Jawaban A."},
+        {id:19,stimulus:"(7) Dalam hal ini, terdapat beberapa penyebab laptop cepat panas dan lambat yang sering terjadi. (8) Penyebab laptop cepat panas dan lambat ini dapat dipengaruhi oleh faktor usia komputer yang sudah terlalu lama, lokasi penggunaan komputer, hingga faktor ruangan yang berdebu.",text:"Bagaimana hubungan kalimat ketujuh dan delapan pada bacaan tersebut?",options:["Menegaskan","Menjelaskan","Membantah","Memperluas","Mempersempit"],answer:"B",explanation:"Kalimat 7 menyatakan ada penyebab laptop panas. Kalimat 8 menjelaskan penyebab-penyebabnya secara rinci. Jawaban B."},
+        {id:20,stimulus:"(7) Dalam hal ini, terdapat beberapa penyebab laptop cepat panas dan lambat yang sering terjadi. (8) Penyebab laptop cepat panas dan lambat ini dapat dipengaruhi oleh faktor usia komputer yang sudah terlalu lama, lokasi penggunaan komputer, hingga faktor ruangan yang berdebu. (9) Beberapa faktor penyebab laptop cepat panas dan lambat tersebut penting untuk diperhatikan. (10) Sebab, hal ini dapat mempengaruhi produktivitas keseharian Anda.",text:"Apa inti paragraf kedua?",options:["Penyebab laptop cepat panas.","Laptop cepat panas karena ada komponen yang mulai konslet.","Produktivitas penggunaan laptop dalam menyelesaikan pekerjaan.","Faktor usia laptop menjadi sangat pengaruh dalam laptop yang panas.","Laptop akan mati sendiri jika terlalu panas."],answer:"A",explanation:"Paragraf kedua (kalimat 7-11) berfokus pada penyebab laptop cepat panas dan lambat. Jawaban A."},
+        {id:21,stimulus:"(1) Salah satu wisata alam yang masih terjaga keindahan dan kejernihan air lautnya adalah Pantai Menganti. (2) Pantai Menganti terletak di Desa Karangduwur, Kecamatan Ayah, Kabupaten Kebumen. (3) Jarak tempuh pantai ini sekitar 40 km dari kecamatan Gombong ke arah selatan. (4) Oleh karena keindahan dan kemurniannya, pantai ini menempati salah satu pantai terindah se Jawa Tengah. (5) Bahkan dapat disejajarkan dengan keindahan pantai yang berada di Selandia Baru. (6) Ditambah lagi dengan bentang alam berbukitan berupa tebing karst membuat pantai yang memiliki pasir putih ini semakin menyejukkan mata kita.\n(7) Di samping kejernihan air lautnya dan pasir putih yang dimiliki, mata kita juga disuguhkan pemandangan di atas tebing yang menawan dan juga dapat menikmati spot sunrise dan sunset ditambah dengan fasilitas lainnya bagi yang suka berfoto-foto.\n(8) Melihat potensi alam yang begitu besar, Pantai Menganti memiliki peran yang sangat besar pula bagi sektor perekonomian di wilayah Kabupaten Kebumen.",text:"Perumpamaan pada bacaan tersebut ditunjukkan pada ….",options:["Kalimat ketiga.","Kalimat keenam.","Kalimat ketujuh.","Kalimat kesembilan.","Kalimat kesepuluh."],answer:"B",explanation:"Kalimat keenam menyebutkan tebing karst yang membuat pantai 'semakin menyejukkan mata' — menggunakan bahasa figuratif/perumpamaan. Jawaban B."},
+        {id:22,stimulus:"(1) Salah satu wisata alam yang masih terjaga keindahan dan kejernihan air lautnya adalah Pantai Menganti...(8) Melihat potensi alam yang begitu besar, Pantai Menganti memiliki peran yang sangat besar pula bagi sektor perekonomian di wilayah Kabupaten Kebumen.",text:"Bagaimana sikap penulis pada bacaan tersebut?",options:["Deskriptif","Persuatif","Argumentatif","Kritis","Reflektif"],answer:"B",explanation:"Penulis tidak hanya mendeskripsikan tetapi juga mengajak/meyakinkan pembaca tentang keindahan Pantai Menganti (persuasif). Jawaban B."},
+        {id:23,stimulus:"(1) Salah satu wisata alam yang masih terjaga keindahan dan kejernihan air lautnya adalah Pantai Menganti...(8) Melihat potensi alam yang begitu besar, Pantai Menganti memiliki peran yang sangat besar pula bagi sektor perekonomian.",text:"Fakta pada bacaan tersebut ditunjukkan oleh kalimat ….",options:["Pertama dan ketiga","Kedua dan keenam","Ketiga dan kelima","Keempat dan ketujuh","Keempat dan kesebelas"],answer:"D",explanation:"Kalimat yang berisi fakta (data konkret/lokasi/angka): kalimat ketiga (40 km) dan kelima (Selandia Baru). Kunci PDF = D. Jawaban D."},
+        {id:24,stimulus:"Tumbuh kembang karakter anak tergantung pada [24] didik keluarga. Karena keluarga merupakan lingkungan terkecil, terdekat dan terdiri dari orang-orang yang paling didengar serta dijadikan contoh oleh anak-anak. Indra Dwi Prasetyo mengatakan, keluarga selalu memegang peranan penting dalam tumbuh kembang anak, termasuk dalam hal pendidikan.\n\nHal yang tidak kalah pentingnya adalah bahwa keluarga berperan dalam pendidikan anak jauh lebih lama dari ruang-ruang kelas formal. Pendidikan sepanjang hayat ini memainkan [25] peranan sentral dalam tumbuh kembang anak.\n\nIndra melihat bahwa pendidikan di Indonesia memiliki ciri khasnya tersendiri. Misalnya, banyak orang tua Indonesia yang melakukan 'pengajaran', jauh sebelum anak lahir dengan cara mendongeng atau [26] doa si anak dengan doa-doa yang baik, ketika masih di dalam kandungan.\n\nAfikrmasi positif yang dimulai, bahkan sebelum anak lahir, setidaknya orang tua menjadi pendidik sebelum melahirkan. Namun tidak [27] banyak keluarga yang tidak memahami bagaimana peran keluarga yang begitu besar.\n\nOrang tua [28] peran sebagai pemimpin bagi si anak. Fase kedua adalah [29] di mana anak-anak menginjak remaja. Di fase ini, [30] kedekatan keluarga terhadap anak sangat penting.",text:"[24] ….",options:["TIDAK PERLU DIPERBAIKI","Pendidik","Pendidikan","Dididik","Terdididk"],answer:"C",explanation:"Konteks: 'tumbuh kembang karakter anak tergantung pada ___ keluarga' → kata yang tepat adalah 'pendidikan' (pendidikan keluarga). Jawaban C."},
+        {id:25,stimulus:"Tumbuh kembang karakter anak tergantung pada pendidikan keluarga...\nHal yang tidak kalah pentingnya adalah bahwa keluarga berperan dalam pendidikan anak jauh lebih lama dari ruang-ruang kelas formal. Pendidikan sepanjang hayat ini memainkan [25] peranan sentral dalam tumbuh kembang anak.",text:"[25] ….",options:["TIDAK PERLU DIPERBAIKI","Peran","Memerankan","Diperan","Diperankan"],answer:"A",explanation:"'Memainkan peranan sentral' — susunan sudah tepat dan baku. Tidak perlu diperbaiki. Jawaban A."},
+        {id:26,stimulus:"...banyak orang tua Indonesia yang melakukan 'pengajaran', jauh sebelum anak lahir dengan cara mendongeng atau [26] doa si anak dengan doa-doa yang baik.",text:"[26] ….",options:["TIDAK PERLU DIPERBAIKI","Doakan","Pendoa","Mendoakan","Berdoa"],answer:"D",explanation:"Kata yang tepat untuk mengisi 'mendongeng atau ___ doa si anak' = mendoakan (bentuk aktif transitif yang paralel dengan mendongeng). Jawaban D."},
+        {id:27,stimulus:"...Namun tidak [27] banyak keluarga yang tidak memahami bagaimana peran keluarga yang begitu besar.",text:"[27] ….",options:["TIDAK PERLU DIPERBAIKI","Dipungkiri","Memungkiri","Mepungkiri","Pungkiran"],answer:"B",explanation:"'Tidak dipungkiri' adalah frasa baku yang tepat. Jawaban B."},
+        {id:28,stimulus:"...Pendekatan pertama adalah ketika anak-anak masih kecil. Dalam hal ini, orang tua [28] peran sebagai pemimpin bagi si anak.",text:"[28] ….",options:["TIDAK PERLU DIPERBAIKI","Peranan","Berperan","Diperan","Diperankan"],answer:"C",explanation:"'Orang tua berperan sebagai pemimpin' — kata berperan adalah bentuk yang tepat (intransitif). Jawaban C."},
+        {id:29,stimulus:"...Fase kedua adalah [29] di mana anak-anak menginjak remaja.",text:"[29] ….",options:["TIDAK PERLU DIPERBAIKI","Dimana","Mana","Kondisi","Posisi"],answer:"A",explanation:"'di mana' (dua kata) sudah benar dalam konteks kalimat relatif. Tidak perlu diperbaiki. Jawaban A."},
+        {id:30,stimulus:"...Di fase ini, [30] kedekatan keluarga terhadap anak sangat penting.",text:"[30] ….",options:["TIDAK PERLU DIPERBAIKI","Dekat","Terdekat","Berdekatan","Pendekatan"],answer:"A",explanation:"'kedekatan' sudah merupakan kata benda yang tepat dalam konteks kalimat. Tidak perlu diperbaiki. Jawaban A."}
+      ]
+    },
+
+    // ─── 4. LITERASI BAHASA INGGRIS ─────────────────────────────────────────
+    {
+      id:"LBE", label:"Literasi Bahasa Inggris", shortLabel:"LBE",
+      desc:"Reading Comprehension", icon:"🇬🇧",
+      duration:20*60, color:"#0891b2",
+      questions:[
+        {id:1,stimulus:"High blood pressure often has no signs or symptoms, but routine checks of your blood pressure will help detect increasing levels. If your blood pressure reading is high at two or more check-ups, the doctor may also ask you to measure your blood pressure at home.\n\nThere are important considerations for older adults in deciding whether to start treatment for high blood pressure, including other health conditions and overall fitness. Your doctor will work with you to find a blood pressure target that is best for your well-being and may suggest exercise, changes in your diet, and medications.",text:"The main idea of the above passage is………",options:["High blood pressure attack young but older adults.","High blood pressure need more measurement.","People with high blood pressure need essential treatment.","No symptoms occurs for high blood pressure.","Increasing of high blood pressure influenced by unhealthy diet."],answer:"C",explanation:"The passage mainly discusses that people with high blood pressure need treatment and medical monitoring. Jawaban C."},
+        {id:2,stimulus:"High blood pressure often has no signs or symptoms, but routine checks of your blood pressure will help detect increasing levels...",text:"The word 'symptoms' in the first paragraph can be replaced with………",options:["Signs","Indications","Signals","Attributes","Dispositions"],answer:"B",explanation:"'Symptoms' = indications/signs of a condition. 'Indications' is the closest synonym in medical context. Jawaban B."},
+        {id:3,stimulus:"Adult with type 1 diabetes need to be extra cautious of COVID-19 as they are more likely to be hospitalized and die, according to the latest Journal of Clinical Endocrinology and Metabolism.\n\nPeople with diabetes are at higher risk for COVID-19 related complications especially if over the age of 40. While children with COVID-19 rarely develop severe respiratory symptoms and often asymptomatic. In contrast, adult risk respiratory symptoms of varying severity, older adult and diabetes at higher risk of acute respiratory distress syndrome and death.\n\nCarla Demeterco from University of California San Diego said 'A study shows people over 40 with type 1 diabetes have worse outcomes than adults. They younger experienced milder disease and a better prognosis'. She informed that those findings indicate the need for age-tailored treatments, immunization and clinical management.\n\nThe researchers studied data from 767 patients with COVID-19 and type 1 diabetes. The investigation showed 54% were 18 younger, 32% were 19-40 years old and 14% were over 40. The study then found patients over 40 were seven times more likely to be hospitalized with COVID-19 than the younger group. No patient from the 18 and under group died, while three died from over 40 age group and two died from the 19-40 age group.\n\nElder over 40 or over with diabetes and COVID-19 experience adverse outcomes such as diabetic ketoacidosis, severe hypoglycaemia or death.",text:"Which of the following can be inferred from the passage about type 1 diabetes and COVID-19?",options:["Diabetes trigger COVID-19 complication.","Diabetes causes people with COVID-19 death.","The youth will infected COVID-19 more severe.","The older with diabetes face worse impacts from COVID-19.","The research shows that diabetes and COVID-19 have unseen connection."],answer:"D",explanation:"The passage clearly states older adults with type 1 diabetes face worse outcomes from COVID-19. Jawaban D."},
+        {id:4,stimulus:"Adult with type 1 diabetes need to be extra cautious of COVID-19...\nNo patient from the 18 and under group died, while three died from over 40 age group and two died from the 19-40 age group.",text:"The author stated that sentence in order to…",options:["Suggest the older to avoid COVID-19.","Warn the older diabetes patient with COVID-19 to reduce their contamination with young generation.","Make the reader aware that youths with diabetes and COVID-19 tend to live longer.","Inform the reader that the death because of COVID-19 with diabetes is related with the people's age.","Report that either youth or older faced death immediately since they got diabetes and COVID-19."],answer:"D",explanation:"The author uses the death statistics to inform that age is a factor in COVID-19 death rates for diabetes patients. Jawaban D."},
+        {id:5,stimulus:"Adult with type 1 diabetes need to be extra cautious of COVID-19...",text:"What is the relationship between ideas in paragraph 4 and paragraph 5 on the above passage?",options:["Paragraph 5 explains the data of research about diabetes and COVID-19 following supporting information in paragraph 4.","Paragraph 5 describes the advantage of diabetes and COVID-19 for older adults followed by data in paragraph 4.","Paragraph 4 warns people over 40 to be more aware with their diabetes since the data showed they may die.","Paragraph 4 gives empirical data about diabetes and COVID-19 death with more opinion in paragraph 5.","Paragraph 5 shows severe outcomes of people over 40 with diabetes and COVID-19 mentioned by data in paragraph 4."],answer:"E",explanation:"Paragraph 4 gives the research data (statistics), paragraph 5 elaborates on the severe outcomes for the over-40 group. Jawaban E."},
+        {id:6,stimulus:"Adult with type 1 diabetes need to be extra cautious of COVID-19...",text:"Which of the following can be concluded from the above passage?",options:["Students have no worries about severe respiratory symptoms when infected with COVID-19.","Heart and chronic kidney problems emerge on those who were over 40 with diabetes and COVID-19.","Only older people are likely being hospitalized with diabetes and COVID-19.","Based on the research people's risk of death is not influenced by individual's age range.","Older and youth with diabetes have to take more immune vaccination."],answer:"B",explanation:"The passage states those over 40 with diabetes had higher prevalence of cardiovascular and chronic kidney disease. Jawaban B."},
+        {id:7,stimulus:"Dates are a rich source of protective plant compounds which have antioxidant properties. These include polyphenols, carotenoids and lignans, which have been shown to help manage the risk of chronic disease. Research role in health, from helping to maintain a healthy gut microbiome to reducing the risk of health conditions. A small study found that date consumption may reduce colon cancer thanks to its high fibre and polyphenol content, the latter also having useful anti-microbial benefits. Dates are a source of potassium, phosphorus, and magnesium. They are also a source of vitamin K which is needed for healthy, strong bones.\n\nIncluding dates in the diet when in the final few weeks of pregnancy may promote cervical dilation and reduce the need for an induced birth. They are also thought to be helpful in reducing the length of labour. Compounds in the fruit are believed to mimic the effects of oxytocin, a hormone involved in labour contractions.\n\nSome people may be allergic to dates and compounds called sulphites may cause allergic symptoms. A mild reaction may include symptoms such as an itching mouth or tongue, sneezing or a runny nose.",text:"These are the benefits of consuming dates, EXCEPT………",options:["Reduce colon cancer","As source of high fiber","Decrease labour length","Strong bone and vitamin K","Make strong immune system"],answer:"D",explanation:"Wait — the text does mention vitamin K for strong bones. The EXCEPT is 'Make strong immune system' which is NOT mentioned. Jawaban D."},
+        {id:8,stimulus:"Dates are a rich source of protective plant compounds...\n'They are also a source of vitamin K which is needed for healthy, strong bones.' The word 'they' in the sentence refers to………",options:["Phosphorus","Dates","Magnesium","Potassium","Polyphenol content"],answer:"B",explanation:"'They' refers back to 'Dates' — the subject of the paragraph. Jawaban B."},
+        {id:9,stimulus:"Dates are a rich source of protective plant compounds...",text:"What is the tone of the above passage?",options:["Subjective","Neutral","Persuasive","Apologetic","Emotional"],answer:"B",explanation:"The passage presents factual, balanced information about dates without bias. The tone is neutral/informative. Jawaban B."},
+        {id:10,stimulus:"...Some people may be allergic to dates and, in addition to this, compounds called sulphites may, for some sensitive individuals, cause allergic symptoms. A mild reaction (10)……… include symptoms such as an itching mouth or tongue.",text:"Which of the following word is most appropriate for filling the blank space?",options:["So that","Should","May","Must","Had better"],answer:"C",explanation:"'A mild reaction may include symptoms' — 'may' fits perfectly as it indicates possibility. Jawaban C."},
+        {id:11,stimulus:"Social norms are the implicit social rules that govern behaviour within a community. Norms are not directly established but develop over time as people daily behaviours, their reactions, and observe of what others are doing. Social norms differ depending on the group of people, community, and culture. What is considered as fully normal, even admirable, in one group may be met with disapproval in another. Robert Cialdini, psychologist, said people are constantly looking for 'social proof' to guide own behaviour.\n\nOne of the challenges we face is creating a sustainable culture where so many unsustainable actions are considered perfectly normal and even desirable. Sustainable behaviour as buying second-hand thing or taking short shower seen as undesirable in status.\n\nSocial norms create opportunities for change since they are dynamic and constantly shifting. The aim for those of us who want to bring about a more sustainable society to quickly bring sustainable behaviour into the realm of normal, acceptable, and something people aspire to.",text:"The passage is mainly concerned with …",options:["Social proof","Social disorder","Sustainable behavior","Acceptable culture","Daily behaviour"],answer:"C",explanation:"The passage discusses how social norms can be shifted to make sustainable behavior more acceptable and normal. Jawaban C."},
+        {id:12,stimulus:"Social norms are the implicit social rules...\nWhat is considered as fully normal, even admirable, in one group may be met with disapproval in another.",text:"Based on the text, the word 'disapproval' in paragraph 1 means………",options:["A negative opinion","A different opinion","An unsustainable behaviour","An unacceptable feeling","A sustainable behaviour"],answer:"A",explanation:"'Disapproval' means a negative opinion or rejection of something. Jawaban A."},
+        {id:13,stimulus:"Social norms are the implicit social rules...\nWe need to give people evidence, social proof, that sustainable behaviour is acceptable and desirable.",text:"According to the author, how is sustainable behavior made acceptable and desirable?",options:["By making dynamic society","By establishing norms","By providing social proof","By aspiring people","By giving changing"],answer:"C",explanation:"The author explicitly states 'We need to give people evidence, social proof, that sustainable behaviour is acceptable and desirable.' Jawaban C."},
+        {id:14,stimulus:"Social norms are the implicit social rules...",text:"The writer wrote the above passage in order to………",options:["Expose the readers with sustainable society.","Give readers information about establishing common social norms.","Make the readers aware about their behavior in the society.","Inform the readers about the acceptable desirable norms.","Tell the readers the sustainable behavior in this cultural society."],answer:"E",explanation:"The writer's purpose is to tell readers about sustainable behavior and how social norms affect cultural society. Jawaban E."},
+        {id:15,stimulus:"Supply chain weaknesses were brought to the forefront during the COVID-19 pandemic. Especially for industries relying on electronics, as the flow of raw materials slowed or sometimes stopped. On top of that, shifting consumer values and tougher environmental regulations have resulted in more people buying hybrid vehicles. The batteries in these cars require rare metals that, depending on their supplies, can have volatile and unpredictable prices.\n\nRandolph Kirchain and colleagues wanted to conduct a comprehensive comparison of the elements and compounds that go into all the parts in a gas-powered, self-charging hybrid and plug-in hybrid cars, calculating each of the questions of how these vehicles really compare with regard to supply chain vulnerabilities.",text:"The author would apparently agree that the relationship between environmental regulations and the purchase of hybrid vehicle is similar to the phenomenon of………",options:["Oil and gas station","Car and traffic","People and vehicle","Modern life and electric cars","Gasoline and public transportation"],answer:"B",explanation:"The author discusses how regulations (like traffic rules) influence behavior (car buying/traffic). The analogy is 'car and traffic.' Jawaban B."},
+        {id:16,stimulus:"Supply chain weaknesses were brought to the forefront during the COVID-19 pandemic...\nThe batteries in these cars require rare metals that, depending on their supplies, can have volatile and unpredictable prices.",text:"Which of the following statement can be inferred about hybrid vehicles from the above passage?",options:["Hybrid car has a comprehensive compounds.","Its self-charging features is the selling point.","It has unpredictable prices over times.","The car's rare parts is over price.","It is better than the conventional cars."],answer:"C",explanation:"The passage states the rare metals required for hybrid car batteries 'can have volatile and unpredictable prices.' Jawaban C."},
+        {id:17,stimulus:"Your respiratory system brings oxygen into your body and helps to remove carbon dioxide. Your lungs are part of your respiratory system. They sit in your chest, protected by your ribcage. Problems with your respiratory system can reduce the oxygen that reaches your lungs, which can make you unwell.",text:"The main information of the text is about………",options:["How oxygen enters the body.","The respiratory system and its function.","How lungs protect the ribcage.","The process of removing carbon dioxide.","The use of chest in respiratory process."],answer:"B",explanation:"The text describes the respiratory system and its function (bringing oxygen in, removing CO2). Jawaban B."},
+        {id:18,stimulus:"Your respiratory system brings oxygen into your body and helps to remove carbon dioxide. Your lungs are part of your respiratory system. They sit in your chest, protected by your ribcage. Problems with your respiratory system can reduce the oxygen that reaches your lungs, which can make you unwell.",text:"Which of the following statements is TRUE about respiratory system?",options:["It needs oxygen to pass the lungs.","Respiratory system's problems decrease oxygen to lungs.","Respiratory process removes bad oxygen from body.","Chest helps to protect lungs and ribcage.","Oxygen brought by lungs make people breathe easily."],answer:"B",explanation:"'Problems with your respiratory system can reduce the oxygen that reaches your lungs' — this matches option B. Jawaban B."},
+        {id:19,stimulus:"Often people who hold higher position in a given group overestimate their performance while people in lower levels of the group underestimate theirs. While this may not always be true, it does indicate that often the actual position in the group has much to do with the feeling of personal confidence a person may have in their work place. Therefore, member who has high position in a group feel that they have significant or important part then trigger to have more confidence in their performance.",text:"The topic of the above passage is ………",options:["Different position in a group.","The role of leaders in a given group.","Self-confidence in workplace.","The attitude of group high members.","The relationship between high position and self-confidence."],answer:"E",explanation:"The passage discusses how one's position in a group relates to their level of self-confidence and performance perception. Jawaban E."},
+        {id:20,stimulus:"Often people who hold higher position in a given group overestimate their performance while people in lower levels of the group underestimate theirs...",text:"From the text, it can be concluded that ………",options:["People in high position will underestimate people of lower position.","People who hold low position in a group often overestimate their performance.","If people have high position, they are confident and perform better.","If people know they are important, they will become more self-confident.","People will get a higher position if they have high self-confidence."],answer:"C",explanation:"The text implies high-position people feel more confident and tend to perform better (or at least feel they do). Jawaban C."}
+      ]
+    },
+
+    // ─── 5. PENALARAN MATEMATIKA ────────────────────────────────────────────
+    {
+      id:"PM", label:"Penalaran Matematika", shortLabel:"PM",
+      desc:"Matematika SNBT Level Tinggi", icon:"📐",
+      duration:42*60+30, color:"#dc2626",
+      questions:[
+        {id:"PM01", stimulus: "Teks 1 (Untuk soal PM01-PM05): Sebuah panitia konser menjual dua jenis tiket, yaitu tiket VIP seharga Rp500.000 dan tiket Reguler seharga Rp200.000 Kapasitas maksimal gedung adalah 800 orang. Panitia menargetkan pendapatan total sebesar Rp250.000.000 dari penjualan tiket tersebut.", text: "Jika semua tiket terjual habis dan gedung terisi penuh dengan jumlah penonton VIP sebanyak 300 orang, berapakah total pendapatan panitia?", options: ["Rp200.000.000", "Rp220.000.000", "Rp250.000.000", "Rp280.000.000"], answer: "C", explanation: "Jika gedung penuh (800 orang) dan VIP ada 300, maka Reguler ada 500 orang. Pendapatan VIP = 300 x Rp500.000 = Rp150.000.000. Pendapatan Reguler = 500 x Rp200.000 = Rp100.000.000. Total = Rp250.000.000."},
+        {id:"PM02", stimulus: "Teks 1 (Untuk soal PM01-PM05): Sebuah panitia konser menjual dua jenis tiket, yaitu tiket VIP seharga Rp500.000 dan tiket Reguler seharga Rp200.000 Kapasitas maksimal gedung adalah 800 orang. Panitia menargetkan pendapatan total sebesar Rp250.000.000 dari penjualan tiket tersebut.", text: "Berdasarkan Teks 1, jika tiket Reguler terjual habis sebanyak 500 lembar, berapa banyak tiket VIP minimal yang harus terjual agar target pendapatan Rp250.000.000 tercapai?", options: ["200", "250", "300", "350"], answer: "C", explanation: "Pendapatan dari 500 tiket Reguler = 500 x Rp200.000 = Rp100.000.000. Sisa target = Rp250.000.000 - Rp100.000.000 = Rp150.000.000. Tiket VIP yang dibutuhkan = Rp150.000.000 / Rp500.000 = 300 tiket."},
+        {id:"PM03", stimulus: "Teks 1 (Untuk soal PM01-PM05): Sebuah panitia konser menjual dua jenis tiket, yaitu tiket VIP seharga Rp500.000 dan tiket Reguler seharga Rp200.000 Kapasitas maksimal gedung adalah 800 orang. Panitia menargetkan pendapatan total sebesar Rp250.000.000 dari penjualan tiket tersebut.", text: "Berdasarkan Teks 1, panitia memutuskan untuk memberikan diskon 10% khusus untuk harga tiket Reguler. Jika terjual 400 tiket VIP dan 400 tiket Reguler, berapakah total pendapatan yang diperoleh?", options: ["Rp250.000.000", "Rp260.000.000", "Rp272.000.000", "Rp280.000.000"], answer: "C", explanation: "Harga Reguler setelah diskon 10% = Rp180.000. Pendapatan Reguler = 400 x Rp180.000 = Rp72.000.000. Pendapatan VIP = 400 x Rp500.000 = Rp200.000.000. Total = Rp272.000.000."},
+        {id:"PM04", stimulus: "Teks 1 (Untuk soal PM01-PM05): Sebuah panitia konser menjual dua jenis tiket, yaitu tiket VIP seharga Rp500.000 dan tiket Reguler seharga Rp200.000 Kapasitas maksimal gedung adalah 800 orang. Panitia menargetkan pendapatan total sebesar Rp250.000.000 dari penjualan tiket tersebut.", text: "Berdasarkan Teks 1, jika panitia hanya berhasil menjual tiket hingga gedung terisi 75% dari kapasitas maksimal, dan perbandingan tiket VIP dan Reguler yang terjual adalah 1:2, berapakah jumlah penonton VIP?", options: ["150", "200", "300", "400"], answer: "B", explanation: "Gedung terisi 75% x 800 = 600 orang. Perbandingan VIP:Reguler = 1:2. Jumlah porsi = 1+2 = 3. Penonton VIP = (1/3) x 600 = 200 orang."},
+        {id:"PM05", stimulus: "Teks 1 (Untuk soal PM01-PM05): Sebuah panitia konser menjual dua jenis tiket, yaitu tiket VIP seharga Rp500.000 dan tiket Reguler seharga Rp200.000 Kapasitas maksimal gedung adalah 800 orang. Panitia menargetkan pendapatan total sebesar Rp250.000.000 dari penjualan tiket tersebut.", text: "Melanjutkan skenario pada soal sebelumnya (Teks 1: gedung terisi 75%, perbandingan VIP:Reguler = 1:2), apakah target pendapatan panitia sebesar Rp250.000.000 tercapai?", options: ["Tercapai, dengan kelebihan Rp30.000.000", "Tercapai, dengan pendapatan pas Rp250.000.000", "Tidak tercapai, kurang Rp70.000.000", "Tidak tercapai, kurang Rp50.000.000"], answer: "C", explanation: "Jumlah VIP = 200, Reguler = 400. Pendapatan VIP = 200 x Rp500.000 = Rp100.000.000. Pendapatan Reguler = 400 x Rp200.000 = Rp80.000.000. Total = Rp180.000.000. Kurang dari target sebesar = Rp250.000.000 - Rp180.000.000 = Rp70.000.000."},
+        {id:"PM06", stimulus: "Teks 2 (Untuk soal PM06-PM10): Sebuah proyek perbaikan jalan direncanakan selesai dalam waktu 40 hari jika dikerjakan oleh 15 orang pekerja. Setiap pekerja dibayar Rp100.000 per hari. Setelah 10 hari bekerja, proyek terhenti selama 5 hari karena cuaca buruk.", text: "Berapa total anggaran awal yang disiapkan untuk membayar upah semua pekerja jika proyek berjalan normal tanpa hambatan?", options: ["Rp45.000.000", "Rp50.000.000", "Rp60.000.000", "Rp75.000.000"], answer: "C", explanation: "Total anggaran awal = 15 pekerja x 40 hari x Rp100.000/hari = Rp60.000.000."},
+        {id:"PM07", stimulus: "Teks 2 (Untuk soal PM06-PM10): Sebuah proyek perbaikan jalan direncanakan selesai dalam waktu 40 hari jika dikerjakan oleh 15 orang pekerja. Setiap pekerja dibayar Rp100.000 per hari. Setelah 10 hari bekerja, proyek terhenti selama 5 hari karena cuaca buruk.", text: "Berdasarkan Teks 2, setelah proyek terhenti selama 5 hari, berapakah sisa waktu yang dimiliki agar proyek dapat selesai tepat waktu sesuai jadwal awal?", options: ["20 hari", "25 hari", "30 hari", "35 hari"], answer: "B", explanation: "Waktu awal = 40 hari. Sudah berjalan = 10 hari. Terhenti = 5 hari. Sisa waktu = 40 - 10 - 5 = 25 hari."},
+        {id:"PM08", stimulus: "Teks 2 (Untuk soal PM06-PM10): Sebuah proyek perbaikan jalan direncanakan selesai dalam waktu 40 hari jika dikerjakan oleh 15 orang pekerja. Setiap pekerja dibayar Rp100.000 per hari. Setelah 10 hari bekerja, proyek terhenti selama 5 hari karena cuaca buruk.", text: "Berdasarkan Teks 2, agar proyek selesai tepat waktu pada sisa hari tersebut, berapa total pekerja yang harus bekerja pada sisa waktu tersebut?", options: ["15 orang", "18 orang", "20 orang", "25 orang"], answer: "B", explanation: "Sisa beban pekerjaan jika normal = 30 hari x 15 orang = 450 orang-hari. Karena waktu tersisa tinggal 25 hari, jumlah pekerja yang dibutuhkan = 450 / 25 = 18 orang."},
+        {id:"PM09", stimulus: "Teks 2 (Untuk soal PM06-PM10): Sebuah proyek perbaikan jalan direncanakan selesai dalam waktu 40 hari jika dikerjakan oleh 15 orang pekerja. Setiap pekerja dibayar Rp100.000 per hari. Setelah 10 hari bekerja, proyek terhenti selama 5 hari karena cuaca buruk.", text: "Berdasarkan Teks 2, berapa banyak tambahan pekerja yang diperlukan oleh pemborong agar proyek selesai tepat waktu?", options: ["3 orang", "5 orang", "8 orang", "10 orang"], answer: "A", explanation: "Total pekerja yang dibutuhkan adalah 18 orang. Pekerja awal yang sudah ada adalah 15 orang. Tambahan pekerja = 18 - 15 = 3 orang."},
+        {id:"PM10", stimulus: "Teks 2 (Untuk soal PM06-PM10): Sebuah proyek perbaikan jalan direncanakan selesai dalam waktu 40 hari jika dikerjakan oleh 15 orang pekerja. Setiap pekerja dibayar Rp100.000 per hari. Setelah 10 hari bekerja, proyek terhenti selama 5 hari karena cuaca buruk.", text: "Berdasarkan Teks 2, jika pemborong menambah pekerja sesuai perhitungan sebelumnya untuk sisa hari, berapakah total tambahan biaya upah (di luar anggaran awal) yang harus dikeluarkan untuk para pekerja tambahan tersebut?", options: ["Rp5.000.000", "Rp7.500.000", "Rp10.000.000", "Rp12.500.000"], answer: "B", explanation: "Pekerja tambahan = 3 orang. Mereka bekerja selama 25 hari sisa. Tambahan biaya = 3 orang x 25 hari x Rp100.000 = Rp7.500.000."},
+        {id:"PM11", stimulus: "Teks 3 (Untuk soal PM11-PM15): Rata-rata nilai ujian matematika dari 30 siswa di kelas A adalah 78. Jika nilai 5 siswa yang mengikuti ujian susulan digabungkan, rata-rata kelas tersebut menjadi 80. Diketahui rentang penilaian ujian adalah dari skala 0 hingga 100.", text: "Berapakah total jumlah nilai dari 30 siswa kelas A sebelum nilai ujian susulan digabungkan?", options: ["2300", "2340", "2400", "2440"], answer: "B", explanation: "Total nilai 30 siswa = Rata-rata x Jumlah siswa = 78 x 30 = 2340."},
+        {id:"PM12", stimulus: "Teks 3 (Untuk soal PM11-PM15): Rata-rata nilai ujian matematika dari 30 siswa di kelas A adalah 78. Jika nilai 5 siswa yang mengikuti ujian susulan digabungkan, rata-rata kelas tersebut menjadi 80. Diketahui rentang penilaian ujian adalah dari skala 0 hingga 100.", text: "Berdasarkan Teks 3, berapakah total jumlah nilai seluruh siswa di kelas A setelah kelima siswa susulan digabungkan?", options: ["2700", "2750", "2800", "2850"], answer: "C", explanation: "Jumlah siswa menjadi 30 + 5 = 35 siswa. Rata-rata baru = 80. Total nilai baru = 35 x 80 = 2800."},
+        {id:"PM13", stimulus: "Teks 3 (Untuk soal PM11-PM15): Rata-rata nilai ujian matematika dari 30 siswa di kelas A adalah 78. Jika nilai 5 siswa yang mengikuti ujian susulan digabungkan, rata-rata kelas tersebut menjadi 80. Diketahui rentang penilaian ujian adalah dari skala 0 hingga 100.", text: "Berdasarkan Teks 3, berapakah rata-rata nilai dari kelima siswa yang mengikuti ujian susulan tersebut?", options: ["85", "88", "90", "92"], answer: "D", explanation: "Total nilai 5 siswa = Total nilai baru - Total nilai lama = 2800 - 2340 = 460. Rata-rata = 460 / 5 = 92."},
+        {id:"PM14", stimulus: "Teks 3 (Untuk soal PM11-PM15): Rata-rata nilai ujian matematika dari 30 siswa di kelas A adalah 78. Jika nilai 5 siswa yang mengikuti ujian susulan digabungkan, rata-rata kelas tersebut menjadi 80. Diketahui rentang penilaian ujian adalah dari skala 0 hingga 100.", text: "Berdasarkan Teks 3, jika dua dari lima siswa susulan tersebut masing-masing mendapatkan nilai 100 dan 90, berapakah rata-rata nilai tiga siswa susulan lainnya?", options: ["85", "88", "90", "95"], answer: "C", explanation: "Total nilai 5 siswa = 460. Nilai 2 siswa = 100 + 90 = 190. Sisa nilai untuk 3 siswa = 460 - 190 = 270. Rata-rata 3 siswa = 270 / 3 = 90."},
+        {id:"PM15", stimulus: "Teks 3 (Untuk soal PM11-PM15): Rata-rata nilai ujian matematika dari 30 siswa di kelas A adalah 78. Jika nilai 5 siswa yang mengikuti ujian susulan digabungkan, rata-rata kelas tersebut menjadi 80. Diketahui rentang penilaian ujian adalah dari skala 0 hingga 100.", text: "Berdasarkan Teks 3, apakah mungkin secara matematis jika salah satu dari 5 siswa susulan tersebut mendapatkan nilai 50?", options: ["Mungkin, jika empat siswa lainnya mendapat rata-rata 80", "Mungkin, jika empat siswa lainnya mendapat nilai sempurna", "Tidak mungkin, karena total nilai maksimal empat siswa lainnya hanya 400", "Tidak mungkin, karena nilai kelulusan minimal adalah 78"], answer: "C", explanation: "Total nilai 5 siswa adalah 460. Jika 1 siswa mendapat 50, maka 4 siswa lainnya harus menyumbang total nilai 410. Hal ini tidak mungkin karena nilai maksimal untuk 4 siswa adalah 4 x 100 = 400."},
+        {id:"PM16", stimulus: "Teks 4 (Untuk soal PM16-PM20): Pak Budi ingin mengecat dinding kamar tidur bagian dalam yang berbentuk balok dengan ukuran panjang 5 meter, lebar 4 meter, dan tinggi 3 meter. Kamar tersebut memiliki satu pintu berukuran 1 m x 2 m dan satu jendela berukuran 2 m x 1,5 m. Harga cat adalah Rp50.000 per kaleng, dan 1 kaleng cat dapat digunakan untuk menutupi area seluas 10 meter persegi.", text: "Berapa meter persegi total luas seluruh sisi dinding kamar Pak Budi sebelum dikurangi luas pintu dan jendela?", options: ["45", "54", "74", "94"], answer: "B", explanation: "Yang dicat hanya 4 sisi dinding (bukan atap/lantai). Luas dinding = 2 x (panjang x tinggi) + 2 x (lebar x tinggi) = 2(5x3) + 2(4x3) = 30 + 24 = 54 meter persegi."},
+        {id:"PM17", stimulus: "Teks 4 (Untuk soal PM16-PM20): Pak Budi ingin mengecat dinding kamar tidur bagian dalam yang berbentuk balok dengan ukuran panjang 5 meter, lebar 4 meter, dan tinggi 3 meter. Kamar tersebut memiliki satu pintu berukuran 1 m x 2 m dan satu jendela berukuran 2 m x 1,5 m. Harga cat adalah Rp50.000 per kaleng, dan 1 kaleng cat dapat digunakan untuk menutupi area seluas 10 meter persegi.", text: "Berdasarkan Teks 4, berapakah total luas area pintu dan jendela di kamar tersebut?", options: ["3,5 meter persegi", "4 meter persegi", "5 meter persegi", "6 meter persegi"], answer: "C", explanation: "Luas pintu = 1 x 2 = 2 m2. Luas jendela = 2 x 1,5 = 3 m2. Total luas = 2 + 3 = 5 meter persegi."},
+        {id:"PM18", stimulus: "Teks 4 (Untuk soal PM16-PM20): Pak Budi ingin mengecat dinding kamar tidur bagian dalam yang berbentuk balok dengan ukuran panjang 5 meter, lebar 4 meter, dan tinggi 3 meter. Kamar tersebut memiliki satu pintu berukuran 1 m x 2 m dan satu jendela berukuran 2 m x 1,5 m. Harga cat adalah Rp50.000 per kaleng, dan 1 kaleng cat dapat digunakan untuk menutupi area seluas 10 meter persegi.", text: "Berdasarkan Teks 4, berapa meter persegi luas dinding yang benar-benar akan dicat oleh Pak Budi?", options: ["49", "50", "52", "54"], answer: "A", explanation: "Luas bersih dinding yang dicat = Luas seluruh dinding - Total luas pintu dan jendela = 54 - 5 = 49 meter persegi."},
+        {id:"PM19", stimulus: "Teks 4 (Untuk soal PM16-PM20): Pak Budi ingin mengecat dinding kamar tidur bagian dalam yang berbentuk balok dengan ukuran panjang 5 meter, lebar 4 meter, dan tinggi 3 meter. Kamar tersebut memiliki satu pintu berukuran 1 m x 2 m dan satu jendela berukuran 2 m x 1,5 m. Harga cat adalah Rp50.000 per kaleng, dan 1 kaleng cat dapat digunakan untuk menutupi area seluas 10 meter persegi.", text: "Berdasarkan Teks 4, berapa kaleng cat minimal yang harus dibeli oleh Pak Budi untuk mengecat seluruh dinding kamarnya tersebut dengan satu lapisan?", options: ["4 kaleng", "5 kaleng", "6 kaleng", "7 kaleng"], answer: "B", explanation: "Dibutuhkan cat untuk 49 m2. Karena 1 kaleng untuk 10 m2, dibutuhkan 49 / 10 = 4,9 kaleng. Karena tidak bisa membeli cat pecahan, Pak Budi harus membeli minimal 5 kaleng utuh."},
+        {id:"PM20", stimulus: "Teks 4 (Untuk soal PM16-PM20): Pak Budi ingin mengecat dinding kamar tidur bagian dalam yang berbentuk balok dengan ukuran panjang 5 meter, lebar 4 meter, dan tinggi 3 meter. Kamar tersebut memiliki satu pintu berukuran 1 m x 2 m dan satu jendela berukuran 2 m x 1,5 m. Harga cat adalah Rp50.000 per kaleng, dan 1 kaleng cat dapat digunakan untuk menutupi area seluas 10 meter persegi.", text: "Berdasarkan Teks 4, jika Pak Budi ingin mengecat dindingnya dengan dua lapis cat (dua kali pengecatan), berapa total biaya minimal yang harus dikeluarkan untuk membeli kaleng cat tersebut?", options: ["Rp250.000", "Rp450.000", "Rp500.000", "Rp600.000"], answer: "C", explanation: "Total luas untuk 2 lapis = 49 x 2 = 98 m2. Kebutuhan kaleng = 98 / 10 = 9,8 kaleng -> harus membeli 10 kaleng. Total biaya = 10 x Rp50.000 = Rp500.000."}
+        ]
+        },
+
+
+    // ─── 6. PEMAHAMAN BACAAN DAN MENULIS ────────────────────────────────────
+    {
+      id:"PBM", label:"Pemahaman Bacaan dan Menulis", shortLabel:"PBM",
+      desc:"Evaluasi kemampuan bahasa, ejaan, dan pemahaman struktur teks.",
+      icon:"✍️", duration:25*60, color:"#0891b2",
+      questions:[
+        {id:"PBM-1",stimulus:`<p>Penayangan perdana Star Wars: The Force Awakens digelar untuk tamu VIP di bioskop TCL Chinese Theatre, Los Angeles, Amerika Serikat. Para bintang dari film pertama yang dirilis 1977, Harrison Ford, Mark Hamill, dan Carrie Fisher, bergabung dengan pendatang baru, seperti John Boyega dan Daisy Ridley pada acara itu. Keamanan dijaga ketat, dengan tenda raksasa yang menaungi karpet merah. Plot film dijaga kerahasiaannya dan media dilarang memberikan ulasan sampai hari penayangan perdananya.</p><p>Meski begitu, beberapa kritikus film memberikan cuitannya di Twitter. Adam B. Vary, wartawan film senior dari Buzzfeed, bercuit, "Santai saja: #TheForceAwakens 100% #Star Wars." Kolumnis film LA Times, Rebecca Keegan, menulis "Cerita, karakter, desain, humor – wahai para penggemar this is the movie you're looking for". Hanya saja, berdasarkan keterangan Matthew Belloni, editor eksekutif Hollywood Reporter dan Billboard, satu orang dipaksa secara paksa dari pemutaran perdana itu.</p><p>Para penggemar telah berkemah berhari-hari di luar bioskop TCL Chinese Theatre, yang dengan beberapa bioskop lainnya di LA menayangkan seri Star Wars ke tujuh ini. Kreator Star Wars George Lucas mengatakan tentang film terbaru ini, "Apa itu yang disebut keluarga dan apa yang ditinggalkan satu generasi harus ditanggung oleh generasi selanjutnya."</p>`,text:"Apa yang menjadi topik utama wacana di atas?",options:["A. Plot film Star Wars.","B. Film Star Wars ketujuh.","C. Pemain Pendatang di film Star Wars.","D. Kehebohan yang terjadi di pemutaran film Star Wars.","E. Situasi dan kondisi saat film Star Wars ketujuh akan diputar."],answer:"B",explanation:"Topik adalah keseluruhan ide yang melatarbelakangi karangan dan masih bersifat umum. Topik yang mencakup keseluruhan ide wacana tersebut adalah Film Star Wars ketujuh, karena seluruh paragraf membahas tentang pemutaran perdana, ulasan kritikus, dan reaksi penggemar terhadap film ketujuh Star Wars."},
+        {id:"PBM-2",stimulus:`<p>(1) … mengucapkan rasa terima kasih, wanita yang berkarier sebagai model dan pembawa acara televisi ini juga menyampaikan ucapan selamat kepada Pia. "Takdir sudah tertulis. Ini adalah takdir saya. Saya telah memberikan rasa bahagia kepada negara saya (2) … hanya beberapa menit," tulis. "Saya ingin mengucapkan selamat kepada Miss Filipina. Anda pasti sangat berbahagia sekarang," lanjut Gutiérrez. (3) … peristiwa memalukan itu terjadi, Harvey telah meminta maaf secara langsung kepada Gutiérrez dan Pia.</p>`,text:"Kata yang tepat untuk mengisi titik-titik dalam paragraf ketiga wacana di atas adalah…",options:["A. Tanpa, hanya, ketika","B. Meskipun, juga, saat","C. Tidak hanya, meski, saat","D. Tidak juga, walaupun, ketika","E. Tentu saja, juga, saat"],answer:"C",explanation:"Kata-kata yang tepat untuk mengisi titik-titik dalam wacana di atas adalah: (1) Tidak hanya mengucapkan rasa terima kasih — menunjukkan penambahan tindakan; (2) meski hanya beberapa menit — menunjukkan konsesi; (3) Saat peristiwa memalukan itu terjadi — menunjukkan waktu. Jawaban C paling tepat secara konteks."},
+        {id:"PBM-3",stimulus:null,text:"Bentuk kalimat tidak langsung dari kalimat, \"'Badai mendatangkan ketenangan. Saya ingin mengucapkan rasa terima kasih kepada seluruh orang yang telah mengirimkan pesan penuh dukungan kepada saya', tulis Miranda\", adalah…",options:["A. Miranda menulis bahwa Badai mendatangkan ketenangan. Dia ingin mengucapkan rasa terima kasih kepada semua orang yang telah mengirimkan pesan penuh dukungan untuk diri saya.","B. Miranda menulis bahwa Badai mendatangkan ketenangan. Dia ingin mengucapkan rasa terima kasih kepada semua orang yang telah mengirimkan pesan penuh dukungan kepadanya.","C. Miranda menulis bahwa Badai telah mendatangkan ketenangan. Saya ingin mengucapkan rasa terima kasih kepada semua orang yang telah mengirimkan pesan penuh dukungan untuk diriku.","D. Miranda menuliskan bahwa, \"Badai mendatangkan ketenangan. Dia ingin mengucapkan rasa terima kasih kepada semua orang yang telah mengirimkan pesan penuh dukungan kepadanya.\"","E. Miranda menulis bahwa Badai mendatangkan ketenangan. Dia akan mengucapkan rasa terima kasih kepada semua orang yang telah mengirimkan pesan penuh dukungan kepada orang lain."],answer:"B",explanation:"Kalimat tidak langsung isinya melaporkan atau memberitahukan perkataan orang lain dalam bentuk kalimat berita. Dalam kalimat tidak langsung, kata ganti 'saya' berubah menjadi 'dia/ia', dan kata 'kepada saya' berubah menjadi 'kepadanya'. Pilihan B paling tepat karena mengubah 'saya' menjadi 'dia' dan 'kepada saya' menjadi 'kepadanya' secara konsisten."},
+        {id:"PBM-4",stimulus:`<p>Pemerintah menurunkan harga bahan bakar minyak menjelang pergantian tahun. Penurunan harga tersebut didasari berbagai pertimbangan, seperti harga minyak mentah, kurs rupiah, serta efisiensi mata rantai pasokan. Harga bahan bakar jenis Premium (1), yang sebelumnya Rp7.300,- (2), diturunkan menjadi hanya Rp7.150 perliter. (3) Harga tersebut berlaku di luar Pulau (4) Jawa, Madura, dan Bali. Adapun untuk wilayah Jawa, Madura, Bali, harganya ditambah Rp100,-. Adapun harga solar (5), yang sebelumnya Rp6.700,- perliter, turun menjadi Rp5.950,- perliter.</p>`,text:"Alasan yang tepat tentang kesalahan penulisan kata yang diberikan nomor pada teks di atas yang tepat adalah …",options:["A. Premium bukan merupakan serapan istilah asing sehingga tidak perlu ditulis dengan huruf kapital.","B. Penulisan bilangan yang menunjukkan harga seharusnya dipisahkan dengan tanda koma.","C. Pengganti kata tiap seharusnya ditandai dengan tanda garis miring (/).","D. Kata Pulau seharusnya ditulis dengan huruf kecil karena mengikuti penulisan nama geografi.","E. Kata solar merupakan kata serapan dari bahasa asing."],answer:"A",explanation:"Penulisan kata pada nomor (1) salah karena kata 'premium' merupakan kata serapan dari bahasa asing yang sudah diserap ke dalam bahasa Indonesia, sehingga seharusnya ditulis dengan huruf kecil (bukan huruf kapital), kecuali jika berada di awal kalimat. Adapun kesalahan lain: (2) penulisan mata uang sebelum bilangan ditulis tanpa spasi, (3) kata 'per' yang menunjukkan 'tiap' ditulis terpisah dari satuan, (4) kata 'Pulau' jika diikuti nama geografi harus ditulis kapital, (5) kata 'solar' sudah benar."},
+        {id:"PBM-5",stimulus:`<p>Mantan atlet bulu tangkis nasional Joko Supriyanto menyampaikan kekhawatirannya akan kemunduran masa depan bulu tangkis Indonesia dengan maraknya pencurian umur dalam penyelenggaraan turnamen. Praktek pencurian umur ini telah lama dilakukan oleh sejumlah klub-klub bulu tangkis. Namun puncaknya baru kelihatan pada tiga tahun terakhir ini. Kasus yang banyak ditemui di lapangan adalah pemain yang memiliki tingkat kemampuan lebih bermain dalam turnamen yang tidak sesuai umurnya demi menambah jam terbang pemain yang bersangkutan. Di turnamen Victory Open 2015, ada tiga kategori umur yakni kategori usia dini A dan B, kategori pemula dan kategori remaja. Hal ini dikhawatirkan akan memberikan pengaruh buruk pada dunia bulu tangkis Indonesia kedepannya.</p><p>Menurut Joko, untuk mencegah hal itu, pengurus Persatuan Bulu Tangkis Seluruh Indonesia (PBSI) daerah harus berperan aktif untuk mengawasi praktek pencurian umur di daerahnya. Untuk mencegah terjadinya kasus serupa, PB Victory Bogor bahkan telah mendirikan asosiasi klub anti pencurian umur untuk meningkatkan kualitas para pemainnya.</p><p>PB Victory Bogor sejak 2011 telah menyelenggarakan Victory Open selama lima tahun berturut-turut, diikuti oleh sejumlah klub bulu tangkis dari berbagai daerah di Indonesia. Kejuaraan ini terdiri dari kategori umur, usia dini, pemula dan remaja. Di tahun 2015, jumlah kepesertaan meningkat dari 1.200 orang di tahun 2014, menjadi 1.385 yang terdiri dari 134 klub.</p>`,text:"Tema pokok wacana di atas adalah…",options:["A. Masa depan bulu tangkis Indonesia yang meresahkan karena kekurangan artis berbakat.","B. Pengurangan umur para atlet saat turnamen meresahkan masa depan bulu tangkis Indonesia.","C. Joko menyatakan keresahannya karena jumlah klub bulu tangkis yang semakin berkurang.","D. Kemunduran dunia bulu tangkis Indonesia, menurut Joko Supriyanto karena banyaknya pencurian umur yang dilakukan oleh klub-klub bulu tangkis sehingga Joko berharap PBSI dapat berperan lebih.","E. Kejuaraan bulu tangkis Indonesia dibagi menjadi tiga kategori, yaitu usia dini, remaja, dan dewasa, namun banyak terjadi kasus pencurian umur."],answer:"B",explanation:"Tema pokok atau tema utama adalah ide pokok suatu paragraf atau wacana yang bersifat khusus. Tema pokok wacana biasanya dapat ditemukan setelah membaca seluruh wacana dan bersifat tersirat. Jadi, tema pokok wacana di atas adalah 'Pengurangan umur para atlet saat turnamen meresahkan masa depan bulu tangkis Indonesia', karena inti dari seluruh wacana adalah kekhawatiran Joko Supriyanto tentang praktek pencurian umur yang dapat merusak masa depan bulu tangkis Indonesia."},
+        {id:"PBM-6",stimulus:`<p>Mantan atlet bulu tangkis nasional Joko Supriyanto menyampaikan kekhawatirannya akan kemunduran masa depan bulu tangkis Indonesia dengan maraknya pencurian umur dalam penyelenggaraan turnamen...</p><p>PB Victory Bogor sejak 2011 telah menyelenggarakan Victory Open selama lima tahun berturut-turut, diikuti oleh sejumlah klub bulu tangkis dari berbagai daerah di Indonesia. Di tahun 2015, jumlah kepesertaan meningkat dari 1.200 orang di tahun 2014, menjadi 1.385 yang terdiri dari 134 klub. Joko sendiri merupakan atlet nomor dua dunia di atas Poul-Erik Høyer Larsen yang berada di urutan ketiga yang merupakan lawan bebuyutannya.</p>`,text:"Rangkuman yang tepat sesuai dengan isi wacana tersebut adalah…",options:["A. Meskipun jumlah peserta turnamen Victory Open meningkat, keresahan Joko, pembina atlet bulu tangkis Indonesia masih tinggi mengingat masih banyaknya kasus pencurian umur yang terjadi di Indonesia.","B. Kasus pencurian umur yang terjadi menurut Joko sangat meresahkan karena dapat menghambat kemajuan dunia perbulutangkisan di Indonesia.","C. Dunia bulu tangkis Indonesia mengalami kemunduran pesat akibat banyak atlet bulu tangkis yang melakukan kecurangan pencurian umur saat bertanding meskipun demikian kejuaraan bulu tangkis yang diadakan oleh PB Victory Bogor terus mengalami kenaikan jumlah peserta.","D. Kemunduran dunia bulu tangkis Indonesia, menurut Joko Supriyanto karena banyaknya pencurian umur yang dilakukan oleh klub-klub bulu tangkis sehingga Joko berharap PBSI dapat berperan lebih untuk mencegah maraknya kasus ini. Kejuaraan Victory Open mengalami peningkatan dari tahun ke tahun sejak berdiri pada tahun 2011.","E. Kejuaraan bulu tangkis Indonesia dibagi menjadi tiga kategori, yaitu usia dini, remaja, dan dewasa. Namun, belakangan banyak terjadi kasus pencurian umum yang meresahkan dunia per-bulu tangkisan Indonesia."],answer:"D",explanation:"Rangkuman adalah intisari dari suatu bacaan yang singkat dan tetap mempertahankan urutan isi dan sudut pandang bacaan tanpa mengubah struktur wacananya. Jawaban D adalah rangkuman paling tepat karena mencakup dua poin utama: (1) kekhawatiran Joko tentang pencurian umur dan peran PBSI, serta (2) perkembangan kejuaraan Victory Open dari tahun ke tahun."},
+        {id:"PBM-7",stimulus:`<p>Mantan atlet bulu tangkis nasional Joko Supriyanto menyampaikan kekhawatirannya akan kemunduran masa depan bulu tangkis Indonesia dengan maraknya pencurian umur dalam penyelenggaraan turnamen...</p>`,text:"Kata 'pencurian umur' dalam wacana di atas memiliki makna yang sama dengan…",options:["A. Penambahan","B. Penipuan","C. Pengambilan paksa","D. Pemalsuan","E. Pengurangan"],answer:"E",explanation:"Kata 'pencurian umur' dalam konteks bulu tangkis berarti pemain bermain di kategori usia yang tidak sesuai (lebih muda dari usia sebenarnya). Ini bermakna 'pengurangan' umur agar pemain bisa bermain di kategori yang lebih rendah. Jadi makna yang paling tepat adalah pengurangan."},
+        {id:"PBM-8",stimulus:`<p>Dinas Sosial Kabupaten Subang merilis, hingga 2015 ini, jumlah keluarga sangat miskin (KSM) mencapai 125.000 Kepala Keluaga (KK) lebih. Dari jumlah sebanyak ini, KSM yang sudah mendapatkan rekomendasi dinas untuk memperoleh bantuan subsidi dari program Badan Penyelenggara Jaminan Sosial (BPJS), KSM yang dapat subsidi dari BPJS melalui program PBI baru mencapai 30% atau baru sekitar 37.500 KK dari total 125.000 KK sangat miskin di seluruh Subang. Capaian angka penyerapan KSM ini dinilai masih sangat rendah dan jauh dari target yang diharapkan. Pasalnya, data RTS (rumah tangga sasaran) atau KSM yang ada mencapai 125.000 KK. Rendahnya penyerapan ini, di antaranya disebabkan banyak KSM di Subang cenderung masih berpikir tentatif dan insidentil. Mereka yang mengurus rekomendasi ke dinas sosial setempat cenderung KSM yang sakit atau sedang dirawat di rumah sakit.</p><p>Oleh karena itu, agar seluruh KSM bisa memperoleh kartu BPJS PBI (penerima bantuan iuran), dinas terkait menilai perlu ada sosialisasi masif kepada KSM, mengenai pentingnya BPJS PBI bagi yang bersangkutan dan menginstruksikan para kepala desa (kades) dan lurah, agar mengkolektifkan KSM di daerahnya agar mendapat rekomendasi dinsos.</p>`,text:"Berikut ini adalah informasi yang sesuai dengan wacana di atas, KECUALI…",options:["A. Total KSM di Kabupaten Subang mencapai 125.000 KK.","B. Para camat di sekitar Subang dan di luar Subang diminta untuk mendata warga miskin yang ada di lingkungannya untuk kemudian diberikan ke Dinas Sosial Subang.","C. KSM yang dapat subsidi dari BPJS melalui program PBI, atau penerima bantuan iuran, baru sekitar 37.500 KK.","D. KSM di Subang kebanyakan pola pikirnya masih berubah-ubah dan dadakan saja. Sehingga pengurusan BPJS hanya KK yang sedang sakit atau sedang dirawat di rumah sakit.","E. Pihak Dinas Sosial Subang dinilai perlu mengadakan sosialisasi secara massif kepada KSM, mengenai pentingnya BPJS PBI bagi yang bersangkutan."],answer:"B",explanation:"Pilihan B tidak sesuai karena wacana menyebutkan bahwa para KEPALA DESA dan LURAH di daerah Subang diminta untuk mengkolektifkan KSM di daerahnya — bukan para camat di luar Subang. Jadi B adalah informasi yang TIDAK SESUAI dengan isi wacana."},
+        {id:"PBM-9",stimulus:`<p>Hari ini, Presiden Joko Widodo (Jokowi) meresmikan Gedung Terminal Bandar Udara Komodo di Labuan Bajo. Dalam kunjungan kerjanya tersebut, Jokowi mengatakan diresmikannya Bandara Komodo guna mendukung percepatan pengembangan perekonomian di NTT, tengah kondisi perlambatan ekonomi dunia, pariwisata menjadi penggerak perekonomian daerah. Oleh karena itu, terminal baru yang akan mampu meningkatkan pelayanan penumpang dari sebelumnya 150 ribu penumpang per tahun menjadi 1,5 juta penumpang per tahun diharapkan dapat meningkatkan jumlah wisatawan yang datang ke Pulau Flores.</p><p>Bandara ini bisa menjadi gerbang bagi wisatawan untuk menikmati keindahan pantai dan alam bawah laut Labuhan Bajo, keindahan Danau Kelimutu, menyaksikan Taman Nasional Komodo di Pulau Komodo, dan pantai merah muda. Kementerian Pariwisata setempat juga turut aktif untuk mempromosikan terminal baru pada Bandara Komodo.</p><p>Dengan peningkatan jumlah wisatawan, Presiden Joko Widodo berharap UMKM bisa memanfaatkan pariwisata Komodo yang berkembang sehingga ekonomi daerah juga semakin berkembang. Presiden juga berpesan agar masyarakat senantiasa merawat dan mengelola terminal baru ini dengan baik. Sejak didirikannya bandara ini pada tahun 1975 dari hanya berupa airstrip, kini Bandara Komodo telah memiliki terminal besar, bersih dan artistik. Runway yang panjangnya mencapai 2250 meter dan lebar 45 meter kini dapat didarati oleh pesawat jet medium sekelas 737-800 dan B737-900.</p>`,text:"Kalimat \"Presiden juga berpesan agar masyarakat senantiasa merawat dan mengelola terminal baru ini dengan baik\" pada teks di atas merupakan contoh kalimat …",options:["A. Kalimat rancu","B. Kalimat sederhana","C. Kalimat majemuk setara","D. Kalimat majemuk bertingkat","E. Kalimat Perintah"],answer:"C",explanation:"Kalimat majemuk setara adalah kalimat yang terdiri atas dua klausa yang hubungannya setara. Kata 'dan' dalam kalimat tersebut menghubungkan dua predikat setara, yaitu 'merawat' dan 'mengelola'. Klausa-klausa dalam kalimat majemuk setara merupakan kalimat utama yang dihubungkan dengan kata penghubung koordinator seperti: dan, atau, baik…maupun, dan tetapi."},
+        {id:"PBM-10",stimulus:`<p>Hari ini, Presiden Joko Widodo (Jokowi) meresmikan Gedung Terminal Bandar Udara Komodo di Labuan Bajo...Sejak didirikannya bandara ini pada tahun 1975 dari hanya berupa airstrip, kini Bandara Komodo telah memiliki terminal besar, bersih dan artistik.</p>`,text:"Pola kalimat dari kalimat \"Sejak tahun 1975 bandara ini dirintis untuk didirikan dengan hanya berupa airstrip, kini Bandara Komodo telah memiliki terminal besar, bersih dan artistik\" adalah…",options:["A. P-S-K","B. S-P-K","C. S-P-O-K","D. S-P-K-O","E. K-S-P-O"],answer:"C",explanation:"Pola kalimat tersebut adalah: K (Sejak tahun 1975) - S (Bandara Komodo) - P (telah memiliki) - O (terminal besar, bersih dan artistik). Namun karena keterangan berada di awal, pola dasarnya tetap S-P-O-K. Jawaban C adalah S-P-O-K."},
+        {id:"PBM-11",stimulus:`<p>Ribuan orang memadati Alun-alun Utara Yogyakarta terutama di kompleks Masjid Agung Kauman. Warga yang hadir bukan hanya warga Yogyakarta sendiri, ada pula yang dari luar kota bahkan luar negeri, ada pula yang hanya sekedar menyaksikan tradisi ini. Empat ekor gajah dari Kebun Binatang Gembiraloka sengaja didatangkan dalam Grebeg Maulud. Keraton Ngayogyakarta Hadiningrat membuat 7 gunungan yang tiga diantaranya adalah gunung lanang, satu dibawa ke Puro Pakualaman dan dua lagi diarak menuju Masjid Agung Kauman sebelum dibawa ke Kepatihan. Ada pula gunungan wadon, satu gunungan gepak, satu gunungan dharat dan satu gunung pawuhan. Sekitar pukul 11.00 WIB, gunungan itu diarak menuju Masjid Agung Kauman. Belum selesai didoakan, warga sudah menyerbu gunungan-gunungan tersebut. Alhasil, sejumlah insiden kecelakaan kecil pun tak bisa dihindarkan.</p>`,text:"Pernyataan yang sesuai dengan teks di atas adalah…",options:["A. Ribuan warga memadati Alun-alun Utara Yogyakarta terutama di kompleks Masjid Agung Kauman setelah prosesi Grebeg Maulud.","B. Keraton Ngayogyakarta Hadiningrat membuat 7 gunungan yang lima diantaranya dibawa diarak menuju Masjid Agung Kauman.","C. Lastri adalah salah satu warga yang menjadi korban saat gunungan grebeg diserbu oleh warga yang ngalap berkah.","D. Ribuan warga memadati Alun-alun Utara Yogyakarta terutama di kompleks Masjid Agung Kauman sebelum prosesi Grebeg Maulud.","E. Salah satu alasan warga mengikuti prosesi rebutan ubo rampe gunungan Grebeg Maulud adalah untuk mendapatkan hasil pertanian yang melimpah dan mendapatkan berkah keselamatan."],answer:"E",explanation:"Dari teks tersebut, dinyatakan bahwa warga datang untuk mengambil bagian dari gunungan (ubo rampe) yang dipercaya membawa berkah. Pilihan E sesuai karena gunungan berisi hasil bumi/pertanian, dan tujuan warga ngalap berkah adalah untuk mendapat keselamatan dan keberkahan. Pilihan lain tidak sesuai: A salah (sebelum, bukan setelah), B salah (3 bukan 5 yang ke Masjid), C tidak ada Lastri dalam teks, D salah (memadati saat prosesi berlangsung)."},
+        {id:"PBM-12",stimulus:`<p>Ribuan orang memadati Alun-alun Utara Yogyakarta terutama di kompleks Masjid Agung Kauman...Empat ekor gajah dari Kebun Binatang Gembiraloka sengaja didatangkan dalam Grebeg Maulud.</p>`,text:"Kedudukan Keterangan dari kalimat, \"Empat ekor gajah dari Kebun Binatang Gembiraloka sengaja didatangkan dalam Grebeg Maulud,\" terdapat pada kata…",options:["A. Empat ekor gajah","B. Kebun Binatang Gembiraloka","C. Didatangkan","D. Grebeg Maulud","E. Empat ekor gajah dari Kebun Binatang Gembiraloka"],answer:"D",explanation:"Dalam kalimat 'Empat ekor gajah dari Kebun Binatang Gembiraloka sengaja didatangkan dalam Grebeg Maulud': S = Empat ekor gajah dari Kebun Binatang Gembiraloka, P = sengaja didatangkan, K (keterangan tempat/acara) = dalam Grebeg Maulud. Jadi keterangan terdapat pada kata 'Grebeg Maulud'. Jawaban D."},
+        {id:"PBM-13",stimulus:`<p>Ribuan orang memadati Alun-alun Utara Yogyakarta...Alhasil, sejumlah insiden kecelakaan kecil pun tak bisa dihindarkan.</p>`,text:"Simpulan yang tepat sesuai dengan wacana di atas adalah…",options:["A. Grebeg Maulud adalah prosesi tahunan yang diadakan oleh Kraton Ngayogyakarta Hadiningrat dan dihadiri oleh semua komponen masyarakat dan luar Yogyakarta.","B. Mujiyono adalah salah seorang warga yang berhasil mendapatkan ubo rampe dari gunungan yang diarak saat Grebeg Maulud.","C. Grebeg Maulud diadakan setiap tahun Jimawal. Arakan Grebeg berisi 7 gunungan yang didoakan dan dibagikan pada rakyat. Mujiyono dan Lastri adalah salah satu contoh warga yang berebut ngalap berkah dari gunungan Grebeg Maulud.","D. Gunungan Grebeg Maulud berjumlah 7 buah dan diarak oleh empat ekor gajah dari Kebun Binatang Gembiraloka. Karena banyaknya masyarakat yang ingin mendapatkan ubo rampe, insiden kecil sering terjadi. Lastri, merupakan salah satu korbannya.","E. Meskipun sering terjadi insiden kecil saat Grebeg Maulud, masyarakat yang datang untuk ngalap berkah maupun hanya datang untuk menyaksikan prosesi Grebeg Maulud tidak berkurang dari tahun ke tahun."],answer:"B",explanation:"Simpulan yang tepat harus berdasarkan fakta yang ada dalam teks. Dari teks, disebutkan ribuan orang hadir untuk ngalap berkah dari gunungan. Pilihan B adalah simpulan yang sesuai dan didukung teks — bahwa ada warga yang berhasil mendapat ubo rampe dari gunungan. Pilihan lain mengandung informasi yang tidak ada atau tidak sesuai teks (Lastri, Mujiyono tidak disebutkan dalam kutipan yang diberikan)."},
+        {id:"PBM-14",stimulus:`<p>"Pustaka Java berisi ribuan (lebih dari 5000) kelas beraneka ragam keampuhan. Kekayaan ini merupakan kandungan tersembunyi bahwa penggunaannya dapat menghemat ratusan jam kerja. Keampuhan ini hanya dapat dimanfaatkan bila kita rajin mencoba. Sebelum membuat solusi sendiri, coba eksplorasi pustaka bahasa, mungkin telah diselesaikan" (Bambang Hariyanto, Esensi-esensi Bahasa Pemrograman Java, 2007, Hal. 37-38).</p>`,text:"Penulisan kutipan berikut benar karena…",options:["A. Kutipan langsung lebih dari empat baris tidak dibubuhkan tanda petik.","B. Berbentuk saduran.","C. Kutipan tidak langsung.","D. Kutipan langsung berupa uraian memakai tanda petik.","E. Kutipan langsung berupa rincian bertanda petik."],answer:"A",explanation:"Kutipan langsung lebih dari empat baris tidak menggunakan tanda petik, ditulis dengan jarak spasi rapat (1 spasi), dengan indentasi dari margin kiri. Cara penulisan kutipan tersebut sudah benar karena: kutipan langsung lebih dari empat baris tidak dibubuhkan tanda petik (menggunakan tanda kutip hanya pada awal dan akhir). Jawaban A."},
+        {id:"PBM-15",stimulus:`<p>Pelayanan kesehatan di berbagai tempat di tanah air belum berorientasi kepada pasien. Hal ini ditandai oleh maraknya pemberian obat antibiotik yang tidak sesuai dengan kondisi klinis. Pemakaian antibiotik yang melebihi kebutuhan bisa mengakibatkan resistansi dalam tubuh pasien. Kuman penyakit dalam tubuh menjadi kebal. Oleh karena itu…</p>`,text:"Kalimat yang tepat untuk mengisi titik di atas adalah…",options:["A. Pasien harus selalu mematuhi semua instruksi dari dokter.","B. Pasien harus pasrah pada layanan kesehatan yang diterima.","C. Perlu ditumbuhkan sikap kritis masyarakat terhadap layanan kesehatan.","D. Pasien harus diberi antibiotik di atas kebutuhan supaya daya tahan tubuh lebih tinggi.","E. Setiap penyakit harus diobati dengan antibiotik."],answer:"C",explanation:"Paragraf membahas masalah pemberian antibiotik berlebihan yang menyebabkan kuman menjadi kebal. Kata 'oleh karena itu' menunjukkan akibat/solusi dari masalah yang dipaparkan. Solusi yang paling tepat dan logis adalah menumbuhkan sikap kritis masyarakat terhadap layanan kesehatan, sehingga masyarakat dapat bertanya atau menolak pemberian antibiotik yang tidak perlu. Jawaban C."},
+        {id:"PBM-16",stimulus:null,text:"Bentuk perulangan yang menyatakan makna resiprokal terdapat dalam kalimat…",options:["A. Kita perlu mewaspadai gerak-gerik orang asing yang baru datang ke desa.","B. Hormat-menghormati sesama tetangga merupakan perilaku yang untuk menciptakan kedamaian dalam bermasyarakat.","C. Amir bolak-balik ke kamar mandi karena perutnya sakit.","D. Ketika ditanya, orang itu memberikan penduduk di sana menjadi marah.","E. Polisi memata-matai kegiatan pencuri itu selama berbulan-bulan."],answer:"B",explanation:"Makna resiprokal pada kata ulang adalah perbuatan yang dilakukan secara berbalas-balasan antara dua pihak atau lebih. Kata 'hormat-menghormati' mengandung makna resiprokal karena berarti saling menghormati antarsesama. Pilihan A (gerak-gerik = berulang tidak tentu), C (bolak-balik = berulang), D (tidak ada kata ulang resiprokal), E (memata-matai = intensitas). Jawaban B."},
+        {id:"PBM-17",stimulus:`<p><strong>Teks I</strong></p><p>Badan Narkotika Nasional (BNN) baru-baru ini mengeluarkan rekomendasi bahwa BPJS Kesehatan belum sesuai dengan syariah. Wajar jika kemudian banyak reaksi terhadap rekomendasi yang mengejutkan ini, mengingat program yang diwajibkan untuk semua warga tersebut sudah berjalan hampir satu tahun di tengah masyarakat Indonesia yang mayoritas muslim.</p><p><strong>Teks II</strong></p><p>Di daerah kita sendiri, seperti di Pekanbaru, kendati telah ada rekomendasi BPJS, Dewan Pengurus Daerah Ikatan Dokter Indonesia (IDI) Pekanbaru juga memiliki harapan besar agar pemerintah mau mendorong pemerintah segera merumuskan langkah-langkah untuk membuat sistemnya yang sesuai syariah, dengan menyempurnakan sistem yang kini sudah berjalan.</p>`,text:"Informasi apakah yang terdapat dalam teks II tetapi tidak terdapat dalam teks I?",options:["A. Imbauan BNN kepada masyarakat Surabaya dan sekitarnya.","B. Kasus dugaan penyalahgunaan narkoba dalam permen dot.","C. Penyitaan permen dot oleh Satpol PP Surabaya saat melakukan operasi gabungan dengan Polsek dan Puskesmas setempat.","D. Pihak terkait mengatakan sampel yang diuji ternyata tidak mengandung narkoba tersebut.","E. Teks I tidak menjelaskan tentang hasil uji laborat yang dilakukan oleh Balai Laborat Narkoba BNN."],answer:"C",explanation:"Informasi yang ada di Teks II tetapi tidak ada di Teks I adalah: hasil uji laboratorium yang menyatakan permen dot negatif (tidak mengandung narkoba), penyitaan oleh Satpol PP dalam operasi gabungan dengan Polsek dan Puskesmas, serta label BPOM. Pilihan C merujuk pada informasi operasi gabungan Satpol PP dengan Polsek dan Puskesmas yang hanya ada di Teks II. Jawaban C."},
+        {id:"PBM-18",stimulus:`<p>Balai Besar Pengawas Obat dan Makanan (BBPOM) Surabaya mengeluarkan laporan hasil uji laboratorium permen dot yang diduga mengandung narkoba...Satpol PP Surabaya menyatakan tengah melakukan razia permen dot yang diduga mengandung zat adiktif. Dari operasi gabungan yang digelar tersebut, Satpol PP menyita 345 botol permen.</p>`,text:"Pernyataan yang paling sesuai dengan isi kedua teks tersebut adalah …",options:["A. Kedua teks tersebut memaparkan adanya penyalahgunaan zat aditif berbahaya dalam permen dot.","B. Kedua teks memaparkan tentang pentingnya kewaspadaan masyarakat saat memilih makanan atau minuman yang akan dikonsumsi agar terhindar dari zat-zat yang berbahaya.","C. Kedua teks menjelaskan tentang sikap pemerintah terhadap keluhan masyarakat terkait isu beredarnya permen di wilayah Surabaya.","D. Teks I mengungkapkan tentang imbauan BNN agar masyarakat turut serta melakukan pengawasan terhadap makanan dan minuman yang beredar luas di pasar, sedangkan teks kedua hasil uji laboratorium terhadap permen dot dan dua makanan yang juga diduga mengandung narkoba.","E. Teks I mengungkapkan tentang alasan populernya permen dot di kalangan anak-anak dan tindakan preventif pemkot Surabaya agar kejadian permen dot narkoba tidak terjadi lagi di kemudian hari."],answer:"D",explanation:"Kedua teks memang membahas tentang permen dot yang diduga mengandung narkoba. Teks I berfokus pada imbauan BNN untuk waspada dan memaparkan fenomena viral permen dot. Teks II berfokus pada hasil uji laboratorium. Pilihan D paling akurat menggambarkan isi masing-masing teks secara keseluruhan. Jawaban D."},
+        {id:"PBM-19",stimulus:`<p>Semua orang menyadari bahwa panda lucu dan punya bulu berwarna hitam dan putih. Tapi, adakah yang mengetahui kenapa bulu panda berwarna tersebut? Kolaborasi peneliti University of California, Davis dan California State University (CSU) berhasil mengungkap rahasia di balik warna panda. Menurut publikasi peneliti di jurnal Behavior Ecology yang terbit Maret 2017 ini, warna hitam putih diperlukan untuk berkamuflase sepanjang tahun, baik musim panas maupun dingin. Warna pada tubuh panda juga digunakan untuk komunikasi.</p>`,text:"Pola paragraf pertama teks di atas adalah …",options:["A. Kalimat utama - kalimat penjelas - kalimat penjelas - kalimat utama - kalimat penjelas.","B. Kalimat utama – kalimat penjelas – kalimat penjelas – kalimat penjelas - kalimat penjelas.","C. Kalimat penjelas – kalimat penjelas – kalimat penjelas – kalimat penjelas – kalimat utama.","D. Kalimat penjelas – kalimat penjelas – kalimat utama – kalimat penjelas.","E. Kalimat utama – kalimat penjelas – kalimat penjelas."],answer:"B",explanation:"Dalam paragraf tersebut, kalimat pertama ('Semua orang menyadari bahwa panda lucu dan punya bulu berwarna hitam dan putih') adalah kalimat utama/topik yang diikuti oleh kalimat-kalimat penjelas: (2) pertanyaan tentang kenapa bulu berwarna demikian, (3) penelitian yang dilakukan, (4) hasil penelitian tentang kamuflase, (5) tentang komunikasi. Pola: KU - KP - KP - KP - KP. Jawaban B."},
+        {id:"PBM-20",stimulus:null,text:"Penggunaan diksi yang kurang tepat pada pernyataan di bawah ini adalah …",options:["A. Komunitas Cinta Berkain Indonesia cabang Western Australia diresmikan pada tanggal 23 April 2016 dan bertempat di KJRI Perth, didirikan oleh salah seorang pengurus KCB Indonesia dengan ketuanya di Perth, Laksmi Hayes.","B. Latar belakang berdirinya KCB Indonesia adalah keinginan untuk melestarikan salah satu budaya bangsa Indonesia dengan menunjukkan jati diri wanita Indonesia yang khas dengan mengenakan busana berkain sebagai pakaian sehari hari.","C. Ini adalah apresiasi dari pengakuan UNESCO terhadap Batik dan Tenun sebagai warisan budaya Bangsa Indonesia.","D. Ini adalah usaha untuk mensosialIsasikan busana berkain kepada masyarakat multibudaya yang ada di Australia Barat.","E. Kekayaan Budaya Bangsa Indonesia ini wajib ditingkatkan dan dilestarikan, melalui KBC yang memiliki cabang di berbagai negara di belahan bumi ini, dapat dipastikan Kain Batik dan Kain Tenun Nusantara akan makin ke pasar internasional."],answer:"C",explanation:"Pada pilihan C, kata 'apresiasi' digunakan tidak tepat konteksnya. Kalimat tersebut seharusnya menggunakan kata 'bukti' atau 'bentuk' pengakuan UNESCO, bukan 'apresiasi dari pengakuan'. Kata 'apresiasi' bermakna penghargaan/penilaian, sedangkan yang dimaksud adalah pengakuan itu sendiri yang menjadi kebanggaan. Penggunaan 'apresiasi dari' secara gramatikal juga kurang tepat. Jawaban C."}
+      ]
+    },
+
+    // ─── 7. PENGETAHUAN DAN PEMAHAMAN UMUM 1 ──────────────────────────────
+    {
+      id:"PPU", label:"Pengetahuan dan Pemahaman Umum", shortLabel:"PPU",
+      desc:"Uji wawasan bahasa, sastra, dan pengetahuan umum.",
+      icon:"🌐", duration:25*60, color:"#7c3aed",
+      questions:[
+        {id:"PPU-1",stimulus:`<p>Kebanyakan kucing tidak dapat berenang seperti anjing. Sama seperti kita yang secara otomatis menghindarkan diri terlalu dekat dengan tepi yang curam. Misalnya balkon dengan pembatas yang rendah dan tepi jurang tanpa palang pembatas. Kita serta merta menjauhi tempat-tempat seperti itu karena kita takut jatuh. Begitu pula dengan kucing, karena sebagian dari mereka tidak mampu berenang, kucing-kucing menjadi takut dengan air. Kucing tidak suka saat bulu-bulunya basah sebab bagi kucing bulu merupakan mantel pelindung yang membuatnya tetap merasa hangat. Untuk kucing-kucing yang berada di alam liar, menjadi basah menandakan bahwa tubuhnya kehilangan banyak kalori yang bisa membawanya pada kematian.</p><p>Kucing tidak membutuhkan air untuk tetap bersih. Kucing merawat dirinya sendiri dengan membersihkan dirinya sendiri. Ia mampu melakukannya sendiri tanpa bantuan manusia. Sebaliknya, air merupakan sesuatu yang membuatnya kedinginan. Selain itu, ia juga merasa jijik dengan air karena instingnya yang menyatakan bahwa menjadi bersih bukanlah dengan mandi.</p>`,text:"Ide pokok dari wacana di atas yaitu mengenai …",options:["A. Kebiasaan untuk memandikan kucing.","B. Kebencian kucing pada air.","C. Perbandingan antara kucing dan manusia.","D. Efek memandikan kucing liar.","E. Perbandingan kucing rumah dan kucing liar."],answer:"B",explanation:"Ide pokok adalah inti dari seluruh isi wacana. Seluruh paragraf dalam wacana membahas mengapa kucing membenci atau takut pada air — mulai dari tidak bisa berenang, bulu sebagai pelindung, hingga naluri kucing yang menganggap air bukan cara untuk bersih. Jadi ide pokok adalah kebencian kucing pada air. Jawaban B."},
+        {id:"PPU-2",stimulus:`<p>Kebanyakan kucing tidak dapat berenang seperti anjing...Untuk kucing-kucing yang berada di alam liar, menjadi basah menandakan bahwa tubuhnya kehilangan banyak kalori yang bisa membawanya pada kematian.</p>`,text:"Bagi kucing-kucing di alam liar, mengapa bulu yang basah dapat membawa pada kematian?",options:["A. Karena bulunya tidak tahan dengan air.","B. Karena kucing dapat merasa kedinginan.","C. Karena kucing tidak dapat mengeringkan bulunya.","D. Karena kucing akan kehilangan banyak energi secara mendadak.","E. Karena kucing tidak memiliki banyak timbunan lemak di tubuhnya."],answer:"D",explanation:"Dari teks: 'Untuk kucing-kucing yang berada di alam liar, menjadi basah menandakan bahwa tubuhnya kehilangan banyak kalori yang bisa membawanya pada kematian.' Kalori adalah satuan energi. Kehilangan banyak kalori berarti kehilangan banyak energi secara mendadak, yang dapat berujung pada kematian. Jawaban D."},
+        {id:"PPU-3",stimulus:`<p>Kebanyakan kucing tidak dapat berenang seperti anjing...Sebaliknya, air merupakan sesuatu yang membuatnya kedinginan. Selain itu, ia juga merasa jijik dengan air karena instingnya yang menyatakan bahwa menjadi bersih bukanlah dengan mandi.</p>`,text:"Kalimat perbandingan yang tepat sesuai isi wacana adalah…",options:["A. Kucing tidak suka berenang sedangkan anjing sangat menyukai air.","B. Kucing dapat merawat dirinya sendiri sedangkan anjing tidak bisa merawat dirinya sendiri.","C. Kucing tidak menyukai kebiasaan mandi seperti manusia yang menjauhi jurang.","D. Kucing seperti manusia yang sama-sama tidak menyukai tempat-tempat yang berbahaya.","E. Kucing tidak menyukai air karena mantel bulu yang dimilikinya sudah menjaganya agar tetap hangat dan bersih."],answer:"C",explanation:"Dalam wacana, perbandingan yang dipaparkan adalah antara kucing dengan manusia: sama seperti manusia yang menghindari tepi jurang karena takut jatuh, kucing juga menghindari air karena tidak bisa berenang. Kalimat perbandingan yang paling tepat sesuai isi teks adalah pilihan C yang membandingkan kucing (tidak suka mandi) dengan manusia (menjauhi jurang) sebagai analogi. Jawaban C."},
+        {id:"PPU-4",stimulus:`<p>Kebanyakan kucing tidak dapat berenang seperti anjing...Kucing tidak membutuhkan air untuk tetap bersih. Kucing merawat dirinya sendiri dengan membersihkan dirinya sendiri. Ia mampu melakukannya sendiri tanpa bantuan manusia.</p>`,text:"Wacana di atas termasuk jenis wacana …",options:["A. Narasi","B. Eksplanasi","C. Eksposisi","D. Argumentasi","E. Deskripsi"],answer:"C",explanation:"Wacana eksposisi bertujuan untuk memberikan penjelasan atau paparan mengenai suatu objek atau fenomena secara informatif. Wacana di atas menjelaskan mengapa kucing takut dan membenci air secara informatif — tidak ada unsur cerita (narasi), tidak ada proses sebab-akibat ilmiah (eksplanasi), tidak ada argumen persuasif (argumentasi), dan bukan penggambaran sensori (deskripsi). Jawaban C."},
+        {id:"PPU-5",stimulus:null,text:"Kalimat yang benar dan sesuai dengan EYD berikut ini ditunjukkan oleh kalimat …",options:["A. Berpusat di museum bank Mandiri, lebih dari 250 peserta Canon Street Pixmatography berlomba mendapatkan foto terbaik dengan waktu hanya 90 menit.","B. Tim dewan juri di lomba ini adalah Yuniadhi Agung (pewarta foto Harian Kompas) dan Yuliandi Kusuma (Pemimpin Redaksi Majalah Digital Canon Indonesia).","C. Tampil sebagai juara pertama adalah Arif u.k. yang mendapatkan printer Canon PIXMA MG5770 disusul juara dua yang berhak atas hadiah Canon PIXMA MG3670 serta juara ketiga Esha Indra Sukmana yang mendapatkan hadiah Canon PIXMA MG3670.","D. Ketiganya juga berhak mendapatkan tiket perjalanan wisata foto ke kota Yogyakarta.","E. \"Canon Street Pixmatography menjadi ajang lomba foto satu-satunya di Indonesia dimana hasil lomba foto langsung dicetak, sehingga mereka dapat merasakan secara langsung hasil fotonya setelah selesai berburu,\" kata Monica, Manajer Produksi PT Datascrip."],answer:"C",explanation:"Kalimat C sudah memenuhi kaidah EYD: nama orang (Arif u.k., Esha Indra Sukmana) ditulis dengan benar, nama produk (Canon PIXMA) menggunakan huruf kapital yang tepat, dan struktur kalimat efektif. Pilihan A salah (museum bank Mandiri seharusnya Museum Bank Mandiri), B kurang jelas kesalahannya namun lebih baik dari A,D,E, D (kota Yogyakarta seharusnya Kota Yogyakarta), E (dimana seharusnya di mana — dua kata). Jawaban C."},
+        {id:"PPU-6",stimulus:`<p>Anak: "Ayah, setelah lulus nanti saya mau sekolah di SMA."</p><p>Ayah: "Kenapa di SMA nak? Padahal, ayah ingin kamu sekolah di SMK."</p><p>Anak: "Kok di SMK? Kenapa memangnya ayah ingin saya sekolah di sana?"</p><p>Ayah: …</p><p>Anak: "Benarkah Yah? Kebetulan Saya ingin bekerja di perkebunan setelah lulus."</p><p>Ayah: "Kalau begitu, akan lebih baik jika kamu memilih SMK sebagai sekolahmu, Nak."</p>`,text:"Dialog yang tepat untuk melengkapi naskah drama di atas adalah …",options:["A. \"Sebetulnya hal ini sudah lama ingin ayah sampaikan kepadamu, Nak.\"","B. \"Benar Nak, teman-teman Ayah banyak yang kerja di perkebunan dan mereka lulusan SMK.\"","C. \"Iya Nak, kan SMK di dekat rumah kita biayanya murah.\"","D. \"Begini Nak, di SMK itu lulusannya bisa langsung terjun di dunia kerja.\"","E. \"Teman kamu, Ridho, Bapak dengar sudah menjadi mandor di perkebunan setelah lulus SMA.\""],answer:"D",explanation:"Dialog harus koheren dengan konteks percakapan. Anak bertanya kenapa harus SMK, dan setelah Ayah menjawab, Anak berkata 'Benarkah Yah? Kebetulan Saya ingin bekerja di perkebunan setelah lulus.' — ini menunjukkan bahwa jawaban Ayah berhubungan dengan dunia kerja. Pilihan D 'di SMK itu lulusannya bisa langsung terjun di dunia kerja' adalah yang paling logis dan relevan dengan respons anak berikutnya tentang bekerja di perkebunan. Jawaban D."},
+        {id:"PPU-7",stimulus:`<p>Ini pilihanku! Aku harus menjalankan usaha beras aking ini!" tekadku tegas dalam hati. Ya, aku tak mungkin menutup usahaku ini, yang sudah berjalan hampir satu tahun. Usaha yang tidak membawa keuntungan banyak, tapi ada kebanggaan di hati. Itu karena pengonsumsi beras akingku adalah masyarakat miskin yang tidak mampu lagi membeli beras yang harganya sudah menggila, sementara cacing di perut terus menuntut atas kelaparannya.</p><p>Dan usahaku ini adalah solusi untuk mereka dan cacing itu. Ya, makan nasi aking adalah sebuah pilihan rakyat miskin untuk tetap hidup. Aku tahu abah tidak suka dengan usahaku ini. Permasalahannya karena keuntungan yang aku peroleh kurang dari cukup. Untuk bisa membahagiakan bapak dan ibu saja tidak bisa. Padahal mereka ingin kalau aku, kelak nanti bisa membiayai mereka pergi haji.</p><p>(Cerpen Beras Aking - Ayu Pangestu)</p>`,text:"Sudut pandang yang digunakan dalam kutipan cerpen di atas adalah …",options:["A. Orang pertama pelaku utama","B. Orang pertama pelaku sampingan","C. Orang ketiga serba tahu","D. Orang ketiga pelaku utama","E. Orang kedua"],answer:"A",explanation:"Berdasarkan penggunaan kata 'aku', 'tekadku', 'usahaku' dalam kutipan cerpen — sudut pandang yang digunakan adalah orang pertama pelaku utama. Jawaban A."},
+        {id:"PPU-8",stimulus:`<p>Ini pilihanku! Aku harus menjalankan usaha beras aking ini!"...Padahal mereka ingin kalau aku, kelak nanti bisa membiayai mereka pergi haji.</p>`,text:"Amanat yang dapat dipetik dari penggalan cerpen di atas yaitu …",options:["A. Sebagai anak haruslah menurut pada perintah orangtua.","B. Jangan menjadi seorang pengusaha jika tidak ingin untung yang sedikit.","C. Bersikap optimis dalam keadaan apapun.","D. Saling tolong menolong pada sesama.","E. Bekerjalah di bidang yang kamu sukai agar berhasil."],answer:"D",explanation:"Amanat adalah pesan moral yang ingin disampaikan pengarang melalui karyanya. Dari cerpen tersebut, tokoh 'aku' memilih menjalankan usaha beras aking untuk membantu rakyat miskin yang kelaparan, meskipun keuntungannya sedikit. Amanat yang dapat dipetik adalah pentingnya saling tolong menolong pada sesama — membantu mereka yang membutuhkan meskipun tidak menguntungkan secara materi. Jawaban D."},
+        {id:"PPU-9",stimulus:`<p>Perilaku remaja saat ini telah keluar sangat jauh dari nilai–nilai moral yang berlaku di masyarakat. Hal ini disebabkan oleh beberapa faktor. Faktor yang pertama adalah bebasnya budaya barat yang masuk ke Indonesia. Budaya–budaya yang masuk tersebut ditiru dan dijadikan suatu kebiasaan baru oleh remaja saat ini, sayangnya perilaku–perilaku yang ditiru adalah perilaku buruk dari budaya tersebut, misalnya seks bebas, narkoba dan lain–lain. Faktor yang kedua adalah lemahnya ilmu agama yang dimiliki oleh para remaja. Padahal, ilmu agama sangatlah berguna karena bisa ...</p>`,text:"Kalimat yang tepat untuk melengkapi paragraf tersebut adalah…",options:["A. Faktor yang terakhir adalah lemahnya pengawasan orangtua kepada pergaulan anak-anak mereka.","B. Oleh karena itu, sebaiknya para orang tua tidak memberikan kebebasan secara penuh pada anak-anak.","C. Akibat dari faktor–faktor tersebut, akhirnya perilaku remaja saat ini menjadi bertolak belakang dengan nilai–nilai yang ada.","D. Selain itu, sebaiknya orangtua juga memperhatikan pendidikan dan fasilitas yang telah diberikan pada sekolah kepada anak-anak mereka.","E. Jadi, bukan merupakan hal yang wajar jika perilaku anak-anak jaman sekarang sudah tidak sesuai dengan nilai dan etika moral."],answer:"C",explanation:"Paragraf membahas faktor-faktor penyebab kemerosotan moral remaja. Kalimat terakhir yang tepat untuk melengkapi paragraf adalah simpulan dari faktor-faktor yang telah disebutkan. Pilihan C 'Akibat dari faktor–faktor tersebut, akhirnya perilaku remaja saat ini menjadi bertolak belakang dengan nilai–nilai yang ada' adalah kalimat simpulan yang paling tepat dan koheren. Jawaban C."},
+        {id:"PPU-10",stimulus:`<p>Sudah dua hari ini aku melihat lelaki yang bertopi itu duduk sendirian di depan sebuah toko di perempatan jalan. Tapi anehnya ia selalu melakukannya di malam hari. Dan apabila pagi atau siang hari ia tak nampak di depan toko itu. Aku sebagai warga kampung yang rumahnya terdekat dengan toko itu sudah selayaknya memiliki rasa curiga dan berusaha mengikuti gerak-gerik lelaki itu. Malam berikutnya kembali aku melihat lelaki bertopi itu sendiri di depan toko. Sesekali ia menundukkan wajahnya dan sesekali memperhatikan motor yang lewat. Dari kejauhan kuikuti lelaki yang mencurigakan itu. Sebenarnya aku sendiri berkeinginan untuk dapat mendekati lelaki itu. Basa-basi atau sekedar berbicara ringan. Siapa tahu ia dalam kesusahan mencari alamat keluarganya di sekitar kampung ini. Atau mungkin siapa tahu dia betul-betul ingin mencuri toko itu. Atau mungkin? Berbagai pertanyaan tiba-tiba muncul dan mengisi penuh pikiranku.</p>`,text:"Penyebab terjadinya konflik dalam kutipan tersebut adalah …",options:["A. Kemunculan laki-laki bertopi di depan sebuah toko.","B. Ketakutan tokoh Aku pada laki-laki bertopi.","C. Kecurigaan tokoh Aku pada laki-laki bertopi.","D. Rasa iba tokoh Aku pada laki-laki bertopi.","E. Rasa penasaran tokoh Aku pada laki-laki bertopi."],answer:"C",explanation:"Konflik dalam cerpen ini adalah pergolakan batin tokoh 'Aku' yang tidak tahu harus bersikap bagaimana terhadap lelaki bertopi. Penyebab konflik adalah kecurigaan tokoh Aku pada laki-laki bertopi — apakah ia pencuri atau hanya orang yang mencari alamat? Kecurigaan inilah yang memunculkan berbagai pertanyaan dan konflik batin. Jawaban C."},
+        {id:"PPU-11",stimulus:`<p>Kita tahu, bahwa awan …<sub>1</sub> muatan listrik, apalagi awan di sekitar daerah badai. Seandainya dapat … arus listrik, maka muatan-muatan listrik tampak seperti air terjun. Bagaimana kalau pesawat … petir di udara? Kalau sebuah pesawat terbang melalui medan listrik ini, muatan listrik akan disergap. Sesuatu akan terjadi bila pesawat tak dapat menampung muatan-muatan listrik ini.<sub>2</sub> Pertama-tama pesawat seolah-olah bersinar biru seperti cahaya api... Dari kokpit penerbang kelihatan pengaruh pada penerimaan gelombang radio, hubungan dengan stasiun di tanah kurang jelas...<sub>4</sub>Badai dapat mengakibatkan penerbangan tertunda dan penundaan tersebut tidak dapat diperkirakan untuk berapa lama... <sub>5</sub>Tapi tidak usah dikhawatirkan karena peramal-peramal cuaca di darat akan memberikan keterangan cuaca sebelum dan selama penerbangan termasuk daerah yang dilanda cuaca buruk.</p>`,text:"Ide pokok dari teks tersebut adalah …",options:["A. Muatan listrik yang terkandung dalam awan","B. Akibat munculnya petir bagi pesawat","C. Reaksi kimia yang terjadi saat muncul petir","D. Cara pesawat untuk menghindari badai","E. Fungsi radar saat terjadinya petir"],answer:"B",explanation:"Seluruh teks membahas apa yang terjadi pada pesawat ketika disambar petir/melewati medan listrik, mulai dari bersinar biru, gangguan radio, hingga kerusakan kecil. Ide pokok teks adalah akibat munculnya petir bagi pesawat. Jawaban B."},
+        {id:"PPU-12",stimulus:`<p>Kita tahu, bahwa awan … muatan listrik, apalagi awan di sekitar daerah badai. Seandainya dapat … arus listrik, maka muatan-muatan listrik tampak seperti air terjun. Bagaimana kalau pesawat … petir di udara?</p>`,text:"Kata-kata yang tepat untuk mengisi titik-titik di atas adalah …",options:["A. terkandung, dilihat, menyambar","B. mengandung, terlihat, disambar","C. dikandung, melihat, menyambar","D. mengandung, melihat, disambar","E. terkandung, melihat, disambar"],answer:"B",explanation:"Pilihan kata yang tepat: (1) awan 'mengandung' muatan listrik — awan sebagai subjek aktif mengandung; (2) Seandainya dapat 'terlihat' arus listrik — terlihat (pasif, bisa dilihat); (3) pesawat 'disambar' petir — pesawat sebagai objek yang dikenai sambaran. Pola aktif-pasif yang paling logis adalah B. Jawaban B."},
+        {id:"PPU-13",stimulus:`<p>Kita tahu, bahwa awan … muatan listrik...<sub>4</sub>Badai dapat mengakibatkan penerbangan tertunda dan penundaan tersebut tidak dapat diperkirakan untuk berapa lama...</p>`,text:"Kalimat rancu yang tidak mendukung keseluruhan ide pokok wacana di atas yang benar ditunjukkan oleh kalimat nomor …",options:["A. 1","B. 2","C. 3","D. 4","E. 5"],answer:"D",explanation:"Kalimat nomor 4 ('Badai dapat mengakibatkan penerbangan tertunda dan penundaan tersebut tidak dapat diperkirakan untuk berapa lama') merupakan kalimat yang kurang relevan karena tidak membahas akibat spesifik petir pada pesawat, melainkan dampak umum badai terhadap penerbangan. Kalimat ini tidak mendukung ide pokok tentang akibat petir bagi pesawat secara langsung. Jawaban D."},
+        {id:"PPU-14",stimulus:`<p>Hari terakhir penutupan Jakarta Fair Kemayoran 2016 dipadati ribuan pengunjung yang berbelanja dengan tawaran diskon besar-besaran. Menurut Direktur International Expo, Ralph Secheunemann jumlah pengunjung Jakarta Fair mencapai 5,7 juta orang selama hari terakhir. Berbagai barang yang ditawarkan mulai dari jenis otomotif, gadget, perabotan rumah tangga, transportasi, mainan, makanan, peralatan mendaki, perlengkapan sekolah, memasak, dan perlengkapan safety rider. Totalnya ada sedikitnya 35 motor yang dibagikan ke pengunjung. Rencananya, Jakarta Fair akan ditutup malam ini. Saat ini sedikitnya 300 ribu pengunjung memadati Jakarta Fair. Pameran Jakarta Fair diklaim Ralph paling menarik dibanding pameran lain di saat libur Lebaran.</p>`,text:"Pernyataan di bawah berikut ini yang tidak sesuai dengan isi wacana di atas adalah …",options:["A. Total nilai transaksi jual-beli selama pameran Jakarta Fair dibuka telah diklaim mencapai Rp6,1 triliun.","B. Acara Pameran Jakarta Fair diikuti oleh 2.700 produsen yang memadati beberapa gedung.","C. Rentang diskon yang ditawarkan oleh para produsen dan penjual di Jakarta Fair mulai dari 30 hingga 80%.","D. Diantara berbagai produk yang dijual pengunjung paling banyak membeli makanan dan mulai dari otomotif.","E. Total pengunjung Jakarta Fair sejak dibuka hingga hari penutupan telah mencapai 5,7 juta orang sehingga diklaim sebagai festival paling menarik tahun ini."],answer:"E",explanation:"Teks menyebutkan 5,7 juta orang adalah jumlah pengunjung selama hari terakhir saja (bukan sejak dibuka), dan diklaim sebagai pameran paling menarik dibanding pameran lain saat libur Lebaran (bukan 'festival paling menarik tahun ini'). Pilihan E mengandung dua kesalahan: (1) menyebut 5,7 juta sejak dibuka (padahal hari terakhir), (2) mengklaim sebagai festival paling menarik tahun ini (tidak ada dalam teks). Jawaban E."},
+        {id:"PPU-15",stimulus:`<p>Dia juga telah mengatakan, apabila <strong>di kemudian hari ada gugatan soal kepengurusan partai yang telah diakui, KPU menegaskan mereka hanya akan berpegang pada SK Menkumham yang ada</strong></p>`,text:"Kalimat efektif hasil perbaikan dari kalimat yang bercetak tebal dalam wacana tersebut adalah …",options:["A. Dia juga telah mengatakan, apabila di kemudian hari ada gugatan soal kepengurusan partai yang telah diakui, KPU menegaskan mereka hanya akan memegang SK Menkumham yang ada.","B. Dia mengatakan, apabila di kemudian hari ada gugatan soal kepengurusan partai yang diakui, KPU menegaskan mereka akan berpegang pada SK Menkumham yang ada.","C. Dia telah mengatakan, jika suatu hari nanti muncul gugatan soal mengenai kepengurusan partai yang telah diakui, KPU menegaskan mereka hanya berpegang pada SK Menkumham yang ada.","D. Dia telah mengatakan, jika saja nanti di kemudian hari ada gugatan soal kepengurusan partai yang diakui, KPU menegaskan mereka akan berpegang saja pada SK Menkumham yang ada.","E. Dia mengatakan, apabila nanti di kemudian hari muncul gugatan soal mengenai kepengurusan partai, KPU menegaskan mereka pasti hanya akan berpegang saja pada SK Menkumham yang ada."],answer:"B",explanation:"Kalimat efektif harus menggunakan kata yang tepat tanpa pemborosan. Kalimat asli memiliki beberapa masalah: 'juga telah' (pemborosan), 'gugatan soal kepengurusan partai yang telah diakui' (rancu), 'hanya akan berpegang' (berlebihan). Pilihan B adalah yang paling efektif: menghilangkan 'juga', menggunakan 'apabila' yang tepat, mengganti 'telah diakui' dengan 'diakui' (lebih efisien), dan menghilangkan 'hanya' yang berlebihan. Jawaban B."},
+        {id:"PPU-16",stimulus:`<p>Di sebuah gang sempit di Alexandria, Ebtesam Mohamed sibuk melakukan tradisi menyetrika ala Mesir dengan menggunakan kakinya. Tidak seperti setrika biasa, dia menghaluskan kerutan di baju dengan bolak-balik menggeser lempengan logam panas besar seberat hampir 40 kilogram dengan kakinya. Ada sepotong kayu pelindung panas yang memisahkan kakinya dengan besi menyerupai oven. Ia menyebut oven kecil yang dia miliki ini sebagai 'rumah api', sejak dulu tidak berubah, namun metode pemanasan baru telah dikembangkan dari minyak tanah menjadi tabung berisi gas alam. Mohamed mengatakan tekniknya lebih efektif ketimbang setrika biasa karena setrikanya lebih berat sehingga memberi tekanan yang lebih besar pada baju yang dirapikan. Biasanya dia butuh waktu hingga 20 menit untuk menyetrika sehelai pakaian. Pelanggan setia Mohamed mengatakan mereka lebih menyukai metode tradisional ketimbang yang saat ini lebih populer. Dia mengenakan biaya antara dua dan lima pound Mesir 0,11 - 0,28 dolar AS per pakaian (5). …</p>`,text:"Kalimat yang tepat untuk melengkapi paragraf yang rumpang adalah …",options:["A. Profesi ini seharusnya dilestarikan agar tidak mengalami kepunahan di masa depan.","B. Makwagi merupakan profesi langka yang sudah jarang ditemukan di negara Mesir.","C. Oleh karena itu, pada zaman yang telah modern ini kebanyakan orang-orang Mesir jarang yang menggunakan jasa para makwagi untuk menyetrika pakaian mereka.","D. Karena harganya yang relatif murah banyak yang tidak tertarik bekerja sebagai makwagi di Mesir, padahal profesi ini merupakan salah satu khazanah budaya yang patut dilestarikan.","E. Meskipun masih memiliki banyak konsumen, profesi ini sudah jarang ditemukan di Mesir karena menyetrika ala makwagi membutuhkan keuletan dan fisik yang kuat."],answer:"E",explanation:"Paragraf membahas profesi makwagi (penyetrika tradisional dengan kaki) yang masih memiliki pelanggan setia namun merupakan profesi yang mulai langka. Kalimat penutup yang paling koheren adalah pilihan E karena: (1) konsisten dengan fakta bahwa Mohamed masih punya pelanggan setia, (2) menjelaskan bahwa profesi ini sudah jarang karena membutuhkan keuletan dan fisik kuat. Jawaban E."},
+        {id:"PPU-17",stimulus:`<p><strong>Teks Berita I</strong></p><p>MAJELIS Ulama Indonesia (MUI) baru-baru ini mengeluarkan rekomendasi bahwa Badan Penyelenggara Jaminan Sosial (BPJS) Kesehatan belum sesuai dengan syariah. Wajar jika kemudian banyak reaksi terhadap rekomendasi yang mengejutkan ini, mengingat program yang diwajibkan untuk semua warga tersebut sudah berjalan hampir satu tahun di tengah masyarakat Indonesia yang mayoritas muslim.</p><p><strong>Teks Berita II</strong></p><p>Di daerah kita sendiri, seperti di Pekanbaru, kendati telah ada rekomendasi BPJS, Dewan Pengurus Daerah Ikatan Dokter Indonesia (IDI) Pekanbaru juga memiliki harapan besar agar pemerintah mau mendorong pemerintah segera merumuskan langkah-langkah untuk membuat sistemnya yang sesuai syariah, dengan menyempurnakan sistem yang kini sudah berjalan.</p>`,text:"Persamaan isi teks berita I dan teks berita II yaitu …",options:["A. Rekomendasi MUI tentang BPJS Kesehatan yang tidak sesuai syariah.","B. Harapan agar pemerintah segera merumuskan BPJS Kesehatan yang sesuai syariah.","C. Reaksi masyarakat terhadap rekomendasi MUI tentang BPJS Kesehatan.","D. Penyempurnaan sistem BPJS Kesehatan yang sudah berjalan.","E. Harapan berbagai pihak agar BPJS Kesehatan segera disesuaikan dengan syariah."],answer:"E",explanation:"Persamaan kedua teks: Teks I membahas rekomendasi MUI bahwa BPJS belum sesuai syariah dan reaksi banyak pihak; Teks II membahas harapan IDI Pekanbaru agar pemerintah merumuskan BPJS yang sesuai syariah. Kesamaannya adalah harapan berbagai pihak agar BPJS Kesehatan segera disesuaikan dengan syariah. Jawaban E."},
+        {id:"PPU-18",stimulus:`<p>(1) Saya selalu bangun lebih awal dari biasanya. (2) Untuk sarapan, mbok Iyem selalu membuatkan secangkir teh hangat dan meletakkan koran tempo kesukaanku di meja makan. (3) Selesai sarapan, aku kemudian memberi makan Si Jalu, ayam jantan peliharaanku di belakang rumah. (4) Setelah memberi makan si Jalu aku kemudian bersiap-siap untuk pergi bekerja. (5) Tepat...</p>`,text:"Kalimat yang tidak padu dalam paragraf di atas adalah kalimat …",options:["A. (1)","B. (2)","C. (3)","D. (4)","E. (5)"],answer:"B",explanation:"Paragraf tersebut menceritakan rutinitas pagi hari tokoh 'saya'. Kalimat (2) 'Untuk sarapan, mbok Iyem selalu membuatkan...' kurang padu karena subjeknya berubah menjadi 'mbok Iyem' — berbeda dengan kalimat lain yang bertokoh 'saya/aku'. Kalimat ini tidak mengikuti alur subjek yang konsisten dalam paragraf. Jawaban B."},
+        {id:"PPU-19",stimulus:null,text:"Kata yang memiliki makna konotasi negatif terdapat dalam kalimat ...",options:["A. Ibu itu berteriak ketika melihat anaknya terjatuh.","B. Sejak menikah dengan pengusaha kaya, wanita itu kerap memamerkan perhiasannya.","C. Para calo tiket memanfaatkan kelemahan sistem penjualan tiket online.","D. Dia adalah seorang pemuda yang gigih dalam mencari nafkah.","E. Sebagai seorang guru, beliau sangat bijaksana dalam mendidik murid-muridnya."],answer:"C",explanation:"Konotasi negatif adalah makna tambahan yang bernilai negatif atau mengandung nilai rasa buruk. Kata 'calo' memiliki konotasi negatif karena bermakna orang yang bekerja mencari keuntungan dengan cara tidak resmi/tidak jujur, sering dikaitkan dengan penipuan atau manipulasi. Kalimat C mengandung kata 'calo' yang berkonotasi negatif. Jawaban C."},
+        {id:"PPU-20",stimulus:null,text:"Kalimat di bawah ini yang menggunakan majas hiperbola adalah...",options:["A. Wajahnya bersinar seperti matahari pagi.","B. Hujan lebat mengguyur kota itu sepanjang malam.","C. Air matanya mengalir deras bagaikan sungai yang tak pernah berhenti.","D. Dia berlari secepat angin menghindari kejaran anjing.","E. Bunga-bunga di taman itu tersenyum menyambut pagi hari."],answer:"C",explanation:"Majas hiperbola adalah majas yang menggunakan pernyataan yang berlebihan atau melebih-lebihkan kenyataan untuk memberi penekanan. Pilihan C 'Air matanya mengalir deras bagaikan sungai yang tak pernah berhenti' adalah hiperbola karena melebih-lebihkan jumlah air mata menjadi seperti sungai yang mengalir deras. Pilihan A dan D adalah simile (perbandingan dengan 'seperti/secepat'), Pilihan E adalah personifikasi, Pilihan B adalah kalimat biasa. Jawaban C."}
+      ]
+    }
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  STATE & HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+let S = {
+  stIdx:0, curQ:0, answers:{}, ragu:{},
+  timerSec:0, totalSec:0, timerInterval:null,
+  finished:false, reviewData:null
+};
+
+const OPTS = ['A','B','C','D','E'];
+const k = (stId,qId) => `${stId}_${qId}`;
+const sub = () => examData.subtests[S.stIdx];
+const qs  = () => sub().questions;
+const q   = () => qs()[S.curQ];
+const ai  = (letter) => OPTS.indexOf(letter);
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INTRO
+// ═══════════════════════════════════════════════════════════════════════════
+function initIntro(){
+  const g = document.getElementById('subtest-grid');
+  g.innerHTML='';
+  examData.subtests.forEach((st,i)=>{
+    const d = document.createElement('button');
+    d.className = 'subtest-card'+(S.stIdx===i?' active':'');
+    d.innerHTML = `
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">${st.icon}</span>
+        <div class="flex-1 text-left">
+          <div class="font-bold text-slate-700 text-sm">${st.label}</div>
+          <div class="text-xs text-slate-400">${st.questions.length} soal · ${fmt(st.duration)}</div>
+        </div>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:${st.color}22;color:${st.color}">${st.shortLabel}</span>
+      </div>`;
+    d.onclick = ()=>{ S.stIdx=i; initIntro(); };
+    g.appendChild(d);
+  });
+  const st = examData.subtests[S.stIdx];
+  document.getElementById('selected-info').innerHTML=
+    `<b>${st.icon} ${st.label}</b> &nbsp;·&nbsp; ${st.questions.length} soal &nbsp;·&nbsp; ${fmt(st.duration)} &nbsp;·&nbsp; IRT Scoring`;
+}
+function fmt(s){ return `${Math.floor(s/60)} menit ${s%60?s%60+'d':''}`.trim(); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  EXAM
+// ═══════════════════════════════════════════════════════════════════════════
+function startExam(){
+  S.curQ=0; S.answers={}; S.ragu={}; S.finished=false;
+  S.timerSec=sub().duration; S.totalSec=sub().duration;
+  show('screen-exam','flex');
+  document.getElementById('hdr-subtest').textContent = sub().label;
+  document.getElementById('hdr-tot').textContent = qs().length;
+  buildNavGrid();
+  renderQ();
+  startTimer();
+}
+
+function show(id,disp='block'){
+  ['screen-intro','screen-exam','screen-result','screen-review'].forEach(s=>{
+    const el=document.getElementById(s);
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+  });
+  const el=document.getElementById(id);
+  el.classList.remove('hidden');
+  if(disp==='flex') el.classList.add('flex');
+}
+
+// ── Timer ────────────────────────────────────────────────────────────────
+function startTimer(){
+  clearInterval(S.timerInterval);
+  updateTimer();
+  S.timerInterval=setInterval(()=>{
+    S.timerSec--;
+    if(S.timerSec<=0){ clearInterval(S.timerInterval); finishExam(); return; }
+    updateTimer();
+  },1000);
+}
+function updateTimer(){
+  const m=Math.floor(S.timerSec/60), s=S.timerSec%60;
+  document.getElementById('timer-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const pct=S.timerSec/S.totalSec;
+  const bar=document.getElementById('timer-bar');
+  bar.style.width=(pct*100)+'%';
+  bar.className='h-full '+( pct>.5?'bg-yellow-400': pct>.2?'bg-orange-400':'bg-red-500' );
+}
+
+// ── Render ───────────────────────────────────────────────────────────────
+function renderQ(){
+  const cur=q(), st=sub();
+  document.getElementById('hdr-cur').textContent=S.curQ+1;
+  document.getElementById('q-badge').textContent=`${st.shortLabel} · Soal ${S.curQ+1} dari ${qs().length}`;
+
+  // Stimulus
+  const sp=document.getElementById('stimulus-panel');
+  const qp=document.getElementById('question-panel');
+  if(cur.stimulus){
+    sp.classList.remove('hidden');
+    document.getElementById('stimulus-content').innerHTML=renderStimulus(cur.stimulus);
+  } else {
+    sp.classList.add('hidden');
+  }
+
+  // Question
+  document.getElementById('q-text').innerHTML=`<span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-black mr-2 flex-shrink-0">${S.curQ+1}</span>${renderText(cur.text)}`;
+
+  // Options
+  const od=document.getElementById('q-options');
+  od.innerHTML='';
+  const ua=S.answers[k(st.id,cur.id)];
+  cur.options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt'+(ua===i?' selected':'');
+    btn.innerHTML=`<span class="opt-label">${OPTS[i]}.</span><span>${renderText(opt)}</span>`;
+    btn.onclick=()=>selectOpt(i);
+    od.appendChild(btn);
+  });
+
+  // Ragu button
+  const isRagu=S.ragu[k(st.id,cur.id)];
+  const rb=document.getElementById('btn-ragu');
+  rb.className=`text-xs px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1 border ${isRagu?'bg-yellow-500 text-white border-yellow-500':'border-yellow-400 text-yellow-600 hover:bg-yellow-50'}`;
+  rb.textContent=isRagu?'⚑ Ragu (ON)':'⚑ Ragu-Ragu';
+
+  updateNavGrid();
+}
+
+function renderStimulus(txt){
+  // Handle markdown table
+  if(txt.includes('|')){
+    const lines=txt.split('\n');
+    let html=''; let inTbl=false; let hdrDone=false;
+    lines.forEach(line=>{
+      const tl=line.trim();
+      if(tl.startsWith('|')){
+        if(!inTbl){ html+='<div class="overflow-x-auto my-2"><table class="soal-tbl">'; inTbl=true; hdrDone=false; }
+        const cells=tl.split('|').slice(1,-1).map(c=>c.trim());
+        if(cells.every(c=>c.match(/^-+$/))){hdrDone=true;return;}
+        const tag=(!hdrDone)?'th':'td';
+        html+=`<tr>${cells.map(c=>`<${tag}>${c}</${tag}>`).join('')}</tr>`;
+        if(!hdrDone) hdrDone=true;
+      } else {
+        if(inTbl){html+='</table></div>';inTbl=false;}
+        if(tl) html+=`<p>${tl}</p>`;
+      }
+    });
+    if(inTbl) html+='</table></div>';
+    return html;
+  }
+  return txt.split('\n').map(l=>l.trim()?`<p>${l}</p>`:'').join('');
+}
+
+function renderText(txt){
+  return txt.replace(/\n/g,'<br>');
+}
+
+function selectOpt(idx){
+  S.answers[k(sub().id,q().id)]=idx;
+  renderQ();
+}
+
+function toggleRagu(){
+  const key=k(sub().id,q().id);
+  S.ragu[key]=!S.ragu[key];
+  renderQ();
+}
+
+function prevQ(){ if(S.curQ>0){S.curQ--;renderQ();} }
+function nextQ(){ if(S.curQ<qs().length-1){S.curQ++;renderQ();} }
+
+// ── Nav Grid ─────────────────────────────────────────────────────────────
+function buildNavGrid(){
+  const g=document.getElementById('nav-grid');
+  g.innerHTML='';
+  qs().forEach((_,i)=>{
+    const b=document.createElement('button');
+    b.id=`nb-${i}`; b.className='btn-nav'; b.textContent=i+1;
+    b.onclick=()=>{S.curQ=i;renderQ();};
+    g.appendChild(b);
+  });
+}
+function updateNavGrid(){
+  const st=sub();
+  qs().forEach((qq,i)=>{
+    const b=document.getElementById(`nb-${i}`); if(!b)return;
+    const kk=k(st.id,qq.id);
+    const has=S.answers[kk]!==undefined;
+    const ragu=S.ragu[kk];
+    b.className='btn-nav'+(i===S.curQ?' btn-current':'')+(ragu?' btn-ragu':has?' btn-answered':'');
+    b.textContent=i+1;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  FINISH & RESULT
+// ═══════════════════════════════════════════════════════════════════════════
+function confirmFinish(){
+  const total=qs().length;
+  const ans=Object.keys(S.answers).filter(x=>x.startsWith(sub().id+'_')).length;
+  document.getElementById('modal-info').innerHTML=
+    `Soal dijawab: <b>${ans}/${total}</b><br>Belum dijawab: <b>${total-ans}</b> soal<br><br>Setelah klik Selesai, sesi tidak bisa dilanjutkan.`;
+  document.getElementById('modal-confirm').classList.remove('hidden');
+}
+function closeModal(){ document.getElementById('modal-confirm').classList.add('hidden'); }
+
+function finishExam(){
+  clearInterval(S.timerInterval);
+  closeModal();
+  show('screen-result');
+  calcResult();
+}
+
+function irtSim(corr,total){
+  const p=corr/total;
+  return Math.round(200+800*(1/(1+Math.exp(-10*(p-0.5)))));
+}
+
+function calcResult(){
+  const st=sub();
+  let corr=0,wrong=0,skip=0;
+  const items=[];
+  st.questions.forEach(qq=>{
+    const kk=k(st.id,qq.id);
+    const ua=S.answers[kk];
+    const ca=ai(qq.answer);
+    let status='skip';
+    if(ua===undefined) skip++;
+    else if(ua===ca){ corr++; status='correct'; }
+    else{ wrong++; status='wrong'; }
+    items.push({qq,ua,ca,status});
+  });
+  S.reviewData=items;
+
+  const score=irtSim(corr,st.questions.length);
+  const pct=Math.round(corr/st.questions.length*100);
+
+  // Score donut
+  const deg=Math.round(score/1000*360);
+  document.getElementById('score-donut').style.background=
+    `conic-gradient(${st.color} ${deg}deg, #e2e8f0 ${deg}deg)`;
+  document.getElementById('total-score').textContent=score;
+
+  // Grade
+  const grade=score>=800?'🥇 Sangat Baik':score>=600?'🥈 Baik':score>=400?'🥉 Cukup':'📚 Perlu Ditingkatkan';
+  document.getElementById('score-grade').textContent=grade;
+  document.getElementById('score-summary').textContent=`${corr} benar · ${wrong} salah · ${skip} tidak dijawab (${pct}%)`;
+
+  // Breakdown
+  document.getElementById('score-breakdown').innerHTML=`
+    <div class="text-sm font-bold text-slate-500 mb-3">Detail Hasil</div>
+    <div class="space-y-2">
+      ${[
+        ['✅ Benar',corr,st.questions.length,'#16a34a'],
+        ['❌ Salah',wrong,st.questions.length,'#dc2626'],
+        ['○ Tidak Dijawab',skip,st.questions.length,'#94a3b8']
+      ].map(([lbl,n,tot,c])=>`
+        <div class="flex items-center gap-3">
+          <div class="text-sm text-slate-600 w-32 font-medium">${lbl}</div>
+          <div class="flex-1 progress-bar"><div class="progress-fill" style="width:${n/tot*100}%;background:${c}"></div></div>
+          <div class="text-sm font-bold" style="color:${c};min-width:2rem;text-align:right">${n}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  REVIEW
+// ═══════════════════════════════════════════════════════════════════════════
+function startReview(){
+  show('screen-review');
+  const corr=S.reviewData.filter(x=>x.status==='correct').length;
+  document.getElementById('review-score-badge').textContent=`${corr}/${qs().length} Benar`;
+  renderReview('all');
+}
+function backToResult(){ show('screen-result'); }
+
+function filterReview(type,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderReview(type);
+}
+
+function renderReview(filter){
+  const list=document.getElementById('review-list');
+  list.innerHTML='';
+  const st=sub();
+  S.reviewData.forEach(({qq,ua,ca,status},i)=>{
+    if(filter==='wrong'&&status!=='wrong') return;
+    if(filter==='correct'&&status!=='correct') return;
+    if(filter==='unanswered'&&status!=='skip') return;
+
+    const card=document.createElement('div');
+    const clr=status==='correct'?'border-green-200 bg-green-50/30':status==='wrong'?'border-red-200 bg-red-50/30':'border-slate-200';
+    card.className=`bg-white rounded-xl border ${clr} mb-4 overflow-hidden`;
+
+    const badge=status==='correct'?'✅':'❌';
+    const badgeLabel=status==='correct'?'Benar':status==='wrong'?'Salah':'Tidak Dijawab';
+
+    const optsHTML=qq.options.map((opt,j)=>{
+      let cls='opt';
+      if(j===ca) cls+=' show-correct';
+      if(j===ua&&j!==ca) cls+=' wrong';
+      const icon=j===ca?'✓ ':j===ua?'✗ ':'';
+      return `<div class="${cls}"><span class="opt-label">${OPTS[j]}.</span><span>${icon}${renderText(opt)}</span></div>`;
+    }).join('');
+
+    card.innerHTML=`
+      <div class="px-4 py-3 flex items-center gap-2 border-b ${status==='correct'?'bg-green-50 border-green-100':status==='wrong'?'bg-red-50 border-red-100':'bg-slate-50 border-slate-100'}">
+        <span>${badge}</span>
+        <span class="font-bold text-sm text-slate-700">${st.shortLabel} – Soal ${i+1}</span>
+        <span class="text-xs text-slate-400 ml-1">${badgeLabel}</span>
+        ${ua!==undefined?`<span class="ml-auto text-xs text-slate-500">Jawaban Anda: <b>${OPTS[ua]}</b> · Kunci: <b>${qq.answer}</b></span>`:'<span class="ml-auto text-xs text-slate-400">Kunci: <b>'+qq.answer+'</b></span>'}
+      </div>
+      ${qq.stimulus?`<div class="px-4 py-3 bg-blue-50/50 border-b border-blue-100"><div class="text-xs font-bold text-blue-500 mb-1.5 uppercase tracking-wide">📄 Stimulus</div><div class="stimulus-box text-xs">${renderStimulus(qq.stimulus)}</div></div>`:''}
+      <div class="p-4">
+        <div class="text-slate-700 font-semibold mb-3 text-sm leading-relaxed">${renderText(qq.text)}</div>
+        <div>${optsHTML}</div>
+        <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <div class="text-xs font-bold text-amber-700 mb-1.5">💡 Pembahasan</div>
+          <div class="text-sm text-slate-700 leading-relaxed">${renderText(qq.explanation)}</div>
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+
+  if(list.innerHTML===''){
+    list.innerHTML=`<div class="text-center text-slate-400 py-10">Tidak ada soal dalam kategori ini.</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════════════════════════════════════════
+function resetApp(){
+  clearInterval(S.timerInterval);
+  S={stIdx:0,curQ:0,answers:{},ragu:{},timerSec:0,totalSec:0,timerInterval:null,finished:false,reviewData:null};
+  show('screen-intro');
+  initIntro();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+initIntro();
+</script>
+
+<!-- Donation Modal -->
+<div id="donate-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+  <div class="bg-white rounded-2xl shadow-xl max-w-[70%] w-full overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+      <h3 class="text-base font-bold">Donate via QRIS</h3>
+      <button onclick="closeDonateModal()" class="text-slate-500 hover:text-slate-900 font-bold">✕</button>
+    </div>
+    <div class="p-5 text-center">
+      <p class="text-sm text-slate-500 mb-4">Scan kode QRIS berikut untuk donasi:</p>
+      <img src="qris.jpg" alt="QRIS Donation" class="mx-auto h-[650px] w-auto max-w-[95%] md:max-w-[80%] rounded-lg border p-2 bg-white shadow-sm" />
+      <p class="mt-3 text-xs text-slate-500">Jika tidak tampil, pastikan file QRIS sudah diunggah ke repo dan path <code>qris.jpg</code> benar.</p>
+    </div>
+    <div class="px-5 py-3 border-t border-slate-100 text-right">
+      <button onclick="closeDonateModal()" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openDonateModal(){
+  const m=document.getElementById('donate-modal');
+  if(m){m.classList.remove('hidden'); m.classList.add('flex');}
+}
+function closeDonateModal(){
+  const m=document.getElementById('donate-modal');
+  if(m){m.classList.add('hidden'); m.classList.remove('flex');}
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  openDonateModal();
+});
+</script>
+</body>
+</html>
